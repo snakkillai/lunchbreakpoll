@@ -13,7 +13,7 @@ body {
 .container {
   margin-top: 60px;
   background: #fff;
-  color: #333;
+  color: #940f80;
   padding: 30px;
   border-radius: 20px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
@@ -36,13 +36,13 @@ input[type="text"] {
   flex: 1;
   padding: 10px;
   font-size: 1rem;
-  border: 2px solid #ff7eb3;
+  border: 2px solid #e1c8d3;
   border-radius: 8px;
 }
 
 button {
   padding: 10px 15px;
-  background-color: #ff5580;
+  background-color: #02072c;
   border: none;
   border-radius: 8px;
   color: white;
@@ -72,7 +72,7 @@ li {
 }
 
 .vote-btn {
-  background-color: #ff85a2;
+  background-color: #bcb5b7;
   border: none;
   color: white;
   padding: 5px 10px;
