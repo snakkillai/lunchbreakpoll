@@ -18,15 +18,16 @@ import {
 
 // Firebase project configuration
 // This connects our app to your specific Firebase Realtime Database project
-  const firebaseConfig = {
+const firebaseConfig = {
     apiKey: "AIzaSyD7qJ3BZ3ppoA9zvT264OzOMkD9L7ls0-Q",
     authDomain: "lunchbreakpoll-c4ecc.firebaseapp.com",
     databaseURL: "https://lunchbreakpoll-c4ecc-default-rtdb.firebaseio.com",
     projectId: "lunchbreakpoll-c4ecc",
     storageBucket: "lunchbreakpoll-c4ecc.firebasestorage.app",
     messagingSenderId: "143579801004",
-    appId: "1:143579801004:web:0a776f8a2c557195e5c609"
-  };
+    appId: "1:143579801004:web:cf8d2dbc25b12a9ae5c609"
+};
+
 // ==========================================
 // FIREBASE INITIALIZATION
 // ==========================================
@@ -61,6 +62,7 @@ try {
 const placeForm = document.getElementById("placeForm");           // Form for adding new places
 const placeInput = document.getElementById("placeInput");         // Input field for place name
 const addBtn = document.getElementById("addBtn");                 // Submit button
+const testBtn = document.getElementById("testBtn");               // Test button for debugging
 const placesList = document.getElementById("placesList");         // Container for place list
 const loadingIndicator = document.getElementById("loadingIndicator"); // Loading message
 const errorMessage = document.getElementById("errorMessage");     // Error message container
@@ -198,44 +200,60 @@ async function handleAddPlace(e) {
     // Prevent the default form submission behavior (page reload)
     e.preventDefault();
     
+    console.log('🍽️ Starting add place process...');
+    
     // Check if Firebase is properly initialized
     if (!placesRef) {
+        console.error('❌ Places reference not available');
         showError("Database connection not available. Please refresh the page.");
         return;
     }
     
+    console.log('✅ Firebase references OK');
+    
     // Get the place name from the input field and remove extra whitespace
     const placeName = placeInput.value.trim();
+    console.log('📝 Place name entered:', placeName);
     
     // Validate the input before proceeding
     if (!validatePlaceName(placeName)) {
+        console.log('❌ Validation failed');
         return; // Exit if validation fails
     }
     
+    console.log('✅ Validation passed');
+    
     // Check if place already exists
     if (doesPlaceExist(placeName)) {
+        console.log('❌ Place already exists');
         showError("This lunch place already exists!");
         placeInput.focus();
         return;
     }
     
+    console.log('✅ Place name is unique');
+    
     // Prevent multiple submissions
     if (appState.isSubmitting) {
+        console.log('⏳ Already submitting, ignoring request');
         return;
     }
     
     try {
         // Update state to prevent double submissions
         appState.isSubmitting = true;
+        console.log('🔄 Setting submitting state');
         
         // Update UI to show loading state
         addBtn.disabled = true;
         addBtn.textContent = "Adding...";
+        console.log('🔄 UI updated to loading state');
         
         // Hide any previous errors
         hideError();
         
-        console.log('Attempting to add place:', placeName);
+        console.log('🚀 Attempting to add place:', placeName);
+        console.log('📍 Database path:', placesRef.toString());
         
         // Create a new lunch place object
         const newPlace = {
@@ -245,44 +263,87 @@ async function handleAddPlace(e) {
             lastVoted: null                     // Track when last vote was cast
         };
         
-        console.log('New place object:', newPlace);
+        console.log('📦 New place object created:', newPlace);
+        console.log('🔗 Database reference:', db);
+        console.log('📍 Places reference:', placesRef);
+        
+        // Test write permissions first
+        console.log('🧪 Testing write permissions...');
         
         // Push the new place to Firebase Realtime Database
         // The push() function automatically generates a unique key for each place
+        console.log('📤 Calling push() function...');
         const result = await push(placesRef, newPlace);
         
-        console.log('Successfully added place with ID:', result.key);
+        console.log('🎉 Push successful! Result:', result);
+        console.log('🆔 New place ID:', result.key);
         
         // Clear the input field after successful submission
         placeInput.value = "";
+        console.log('🧹 Input field cleared');
         
         // Show success feedback
         showSuccess(`Successfully added: ${placeName}`);
+        console.log('✅ Success message shown');
         
         // Focus back on input for better UX
         placeInput.focus();
         
+        console.log('🎯 Process completed successfully');
+        
     } catch (error) {
         // Handle any errors that occur during the database operation
-        console.error("Error adding place:", error);
-        console.error("Error details:", {
-            code: error.code,
-            message: error.message,
-            stack: error.stack
-        });
+        console.error("💥 ERROR ADDING PLACE:");
+        console.error("Error object:", error);
+        console.error("Error name:", error.name);
+        console.error("Error message:", error.message);
+        console.error("Error code:", error.code);
+        console.error("Error stack:", error.stack);
         
-        if (error.code === 'PERMISSION_DENIED') {
-            showError("Permission denied. Please check your Firebase security rules.");
-        } else if (error.code === 'NETWORK_ERROR') {
-            showError("Network error. Please check your internet connection and try again.");
+        // Log Firebase-specific error details
+        if (error.code) {
+            console.error("🔥 Firebase error code:", error.code);
+            
+            switch (error.code) {
+                case 'PERMISSION_DENIED':
+                    console.error("🔒 PERMISSION DENIED - Your Firebase security rules are blocking writes");
+                    console.error("🛠️ SOLUTION: Go to Firebase Console → Realtime Database → Rules");
+                    console.error("📝 Set rules to: {\"rules\": {\".read\": true, \".write\": true}}");
+                    showError("❌ Permission denied! Please update your Firebase security rules to allow write access.");
+                    break;
+                    
+                case 'NETWORK_ERROR':
+                    console.error("🌐 Network error - check internet connection");
+                    showError("Network error. Please check your internet connection and try again.");
+                    break;
+                    
+                case 'INVALID_ARGUMENT':
+                    console.error("📝 Invalid data format");
+                    showError("Invalid data format. Please try again.");
+                    break;
+                    
+                default:
+                    console.error("❓ Unknown Firebase error");
+                    showError("Failed to add place. Error: " + error.message);
+            }
         } else {
+            console.error("❓ Non-Firebase error");
             showError("Failed to add place. Please try again! Error: " + error.message);
         }
+        
+        // Log current app state for debugging
+        console.error("📊 Current app state:", appState);
+        console.error("🔗 Firebase app:", app);
+        console.error("💾 Database reference:", db);
+        console.error("📍 Places reference:", placesRef);
+        
     } finally {
         // Reset the submit button state regardless of success or failure
+        console.log('🔄 Resetting button state');
         appState.isSubmitting = false;
         addBtn.disabled = false;
         addBtn.textContent = "Add Place";
+        console.log('✅ Button state reset complete');
     }
 }
 
@@ -597,6 +658,21 @@ function setupRealtimeListener() {
 function setupEventListeners() {
     // Form submission for adding new places
     placeForm.addEventListener("submit", handleAddPlace);
+    
+    // Test button for Firebase debugging
+    testBtn.addEventListener("click", async () => {
+        testBtn.disabled = true;
+        testBtn.textContent = "🧪 Testing...";
+        
+        const success = await window.testFirebaseConnection();
+        
+        testBtn.disabled = false;
+        testBtn.textContent = success ? "✅ Test Passed!" : "❌ Test Failed!";
+        
+        setTimeout(() => {
+            testBtn.textContent = "🧪 Test Firebase Connection";
+        }, 3000);
+    });
     
     // Input field enhancements
     placeInput.addEventListener('input', () => {
