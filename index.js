@@ -12,11 +12,12 @@ import {
     onValue, 
     update, 
     serverTimestamp,
-    off
+    off,
+    get
 } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
 
 // Firebase project configuration
-// This connects our app to your specific Firebase project
+// This connects our app to your specific Firebase Realtime Database project
 const firebaseConfig = {
     apiKey: "AIzaSyD7qJ3BZ3ppoA9zvT264OzOMkD9L7ls0-Q",
     authDomain: "lunchbreakpoll-c4ecc.firebaseapp.com",
@@ -31,16 +32,27 @@ const firebaseConfig = {
 // FIREBASE INITIALIZATION
 // ==========================================
 
-// Initialize Firebase app with our configuration
-const app = initializeApp(firebaseConfig);
+let app, db, placesRef;
 
-// Get a reference to the Realtime Database
-// This allows us to read and write data in real-time
-const db = getDatabase(app);
+try {
+    // Initialize Firebase app with our configuration
+    app = initializeApp(firebaseConfig);
+    console.log('Firebase app initialized successfully');
 
-// Create a reference to the "lunchPlaces" node in our database
-// This is where all lunch place data will be stored
-const placesRef = ref(db, "lunchPlaces");
+    // Get a reference to the Realtime Database
+    // This allows us to read and write data in real-time
+    db = getDatabase(app);
+    console.log('Database reference obtained');
+
+    // Create a reference to the "lunchPlaces" node in our database
+    // This is where all lunch place data will be stored
+    placesRef = ref(db, "lunchPlaces");
+    console.log('Places reference created');
+
+} catch (error) {
+    console.error('Firebase initialization error:', error);
+    alert('Failed to connect to Firebase. Please check your internet connection and refresh the page.');
+}
 
 // ==========================================
 // DOM ELEMENT REFERENCES
@@ -64,7 +76,8 @@ let appState = {
     isLoading: true,              // Whether we're loading data
     places: {},                   // Current places data from Firebase
     isSubmitting: false,          // Whether we're currently adding a place
-    votingInProgress: new Set()   // Track which places are being voted on
+    votingInProgress: new Set(),  // Track which places are being voted on
+    isConnected: true             // Track Firebase connection status
 };
 
 // ==========================================
@@ -80,10 +93,10 @@ function showError(message) {
     errorMessage.style.display = 'block';
     console.error('LunchVote Error:', message);
     
-    // Auto-hide error after 5 seconds
+    // Auto-hide error after 8 seconds
     setTimeout(() => {
         hideError();
-    }, 5000);
+    }, 8000);
 }
 
 /**
@@ -186,6 +199,12 @@ async function handleAddPlace(e) {
     // Prevent the default form submission behavior (page reload)
     e.preventDefault();
     
+    // Check if Firebase is properly initialized
+    if (!placesRef) {
+        showError("Database connection not available. Please refresh the page.");
+        return;
+    }
+    
     // Get the place name from the input field and remove extra whitespace
     const placeName = placeInput.value.trim();
     
@@ -197,6 +216,7 @@ async function handleAddPlace(e) {
     // Check if place already exists
     if (doesPlaceExist(placeName)) {
         showError("This lunch place already exists!");
+        placeInput.focus();
         return;
     }
     
@@ -216,6 +236,8 @@ async function handleAddPlace(e) {
         // Hide any previous errors
         hideError();
         
+        console.log('Attempting to add place:', placeName);
+        
         // Create a new lunch place object
         const newPlace = {
             name: sanitizeInput(placeName),     // Sanitized place name
@@ -224,9 +246,13 @@ async function handleAddPlace(e) {
             lastVoted: null                     // Track when last vote was cast
         };
         
+        console.log('New place object:', newPlace);
+        
         // Push the new place to Firebase Realtime Database
         // The push() function automatically generates a unique key for each place
-        await push(placesRef, newPlace);
+        const result = await push(placesRef, newPlace);
+        
+        console.log('Successfully added place with ID:', result.key);
         
         // Clear the input field after successful submission
         placeInput.value = "";
@@ -240,7 +266,19 @@ async function handleAddPlace(e) {
     } catch (error) {
         // Handle any errors that occur during the database operation
         console.error("Error adding place:", error);
-        showError("Failed to add place. Please check your internet connection and try again!");
+        console.error("Error details:", {
+            code: error.code,
+            message: error.message,
+            stack: error.stack
+        });
+        
+        if (error.code === 'PERMISSION_DENIED') {
+            showError("Permission denied. Please check your Firebase security rules.");
+        } else if (error.code === 'NETWORK_ERROR') {
+            showError("Network error. Please check your internet connection and try again.");
+        } else {
+            showError("Failed to add place. Please try again! Error: " + error.message);
+        }
     } finally {
         // Reset the submit button state regardless of success or failure
         appState.isSubmitting = false;
@@ -258,6 +296,12 @@ async function handleAddPlace(e) {
  * @param {string} placeId - The unique ID of the place to vote for
  */
 async function handleVote(placeId) {
+    // Check if Firebase is properly initialized
+    if (!placesRef) {
+        showError("Database connection not available. Please refresh the page.");
+        return;
+    }
+    
     // Prevent multiple votes on the same place simultaneously
     if (appState.votingInProgress.has(placeId)) {
         return;
@@ -281,12 +325,22 @@ async function handleVote(placeId) {
             voteBtn.classList.add('voting');
         }
         
+        console.log('Attempting to vote for place:', placeId);
+        
         // Get reference to the specific place in the database
         const placeRef = ref(db, `lunchPlaces/${placeId}`);
         
-        // Get the current data for this place
-        const currentPlace = appState.places[placeId];
+        // Get the current data for this place to ensure we have the latest vote count
+        const snapshot = await get(placeRef);
+        
+        if (!snapshot.exists()) {
+            throw new Error("Place no longer exists");
+        }
+        
+        const currentPlace = snapshot.val();
         const currentVotes = currentPlace.votes || 0;
+        
+        console.log('Current votes for place:', currentVotes);
         
         // Prepare the update object
         const updates = {
@@ -294,8 +348,12 @@ async function handleVote(placeId) {
             lastVoted: serverTimestamp()       // Update last voted timestamp
         };
         
+        console.log('Updating with:', updates);
+        
         // Update the vote count in Firebase
         await update(placeRef, updates);
+        
+        console.log('Vote recorded successfully');
         
         // Show success feedback
         showSuccess(`Voted for: ${currentPlace.name}`);
@@ -303,7 +361,19 @@ async function handleVote(placeId) {
     } catch (error) {
         // Handle any errors that occur during voting
         console.error("Error voting:", error);
-        showError("Failed to record your vote. Please try again!");
+        console.error("Error details:", {
+            code: error.code,
+            message: error.message,
+            stack: error.stack
+        });
+        
+        if (error.code === 'PERMISSION_DENIED') {
+            showError("Permission denied. Please check your Firebase security rules.");
+        } else if (error.code === 'NETWORK_ERROR') {
+            showError("Network error. Please check your internet connection and try again.");
+        } else {
+            showError("Failed to record your vote. Please try again! Error: " + error.message);
+        }
         
         // Reset button state on error
         const voteBtn = document.querySelector(`[data-id="${placeId}"]`);
@@ -384,6 +454,8 @@ function createPlaceElement(placeId, placeData) {
  * @param {Object} placesData - The places data from Firebase
  */
 function renderPlaces(placesData) {
+    console.log('Rendering places:', placesData);
+    
     // Clear the existing list
     placesList.innerHTML = "";
     
@@ -396,6 +468,7 @@ function renderPlaces(placesData) {
     
     // If no places exist, we're done (empty state will be shown)
     if (!placesData) {
+        console.log('No places to display');
         return;
     }
     
@@ -404,6 +477,8 @@ function renderPlaces(placesData) {
         id,
         ...data
     }));
+    
+    console.log('Places array:', placesArray);
     
     // Sort places by vote count (highest first), then by creation time (newest first)
     placesArray.sort((a, b) => {
@@ -420,6 +495,8 @@ function renderPlaces(placesData) {
         const placeElement = createPlaceElement(place.id, place);
         placesList.appendChild(placeElement);
     });
+    
+    console.log('Rendered', placesArray.length, 'places');
 }
 
 // ==========================================
@@ -431,12 +508,27 @@ function renderPlaces(placesData) {
  * This function will be called whenever data in Firebase changes
  */
 function setupRealtimeListener() {
+    if (!placesRef) {
+        console.error('Places reference not available');
+        showError('Database connection not available. Please refresh the page.');
+        return;
+    }
+    
+    console.log('Setting up real-time listener...');
+    
     // Listen for changes to the lunchPlaces node in Firebase
     // onValue() sets up a real-time listener that fires whenever data changes
     onValue(placesRef, (snapshot) => {
         try {
+            console.log('Database snapshot received');
+            
             // Get the data from the snapshot
             const data = snapshot.val();
+            
+            console.log('Snapshot data:', data);
+            
+            // Update connection status
+            appState.isConnected = true;
             
             // Render the places with the new data
             renderPlaces(data);
@@ -453,7 +545,14 @@ function setupRealtimeListener() {
     }, (error) => {
         // Handle any errors that occur with the database connection
         console.error("Database connection error:", error);
-        showError("Unable to connect to the database. Please check your internet connection.");
+        appState.isConnected = false;
+        
+        if (error.code === 'PERMISSION_DENIED') {
+            showError("Permission denied. Please check your Firebase security rules.");
+        } else {
+            showError("Unable to connect to the database. Please check your internet connection and refresh the page.");
+        }
+        
         appState.isLoading = false;
         updateUI();
     });
@@ -497,11 +596,13 @@ function setupEventListeners() {
     // Handle online/offline status
     window.addEventListener('online', () => {
         console.log('Connection restored');
+        appState.isConnected = true;
         hideError();
     });
     
     window.addEventListener('offline', () => {
         console.log('Connection lost');
+        appState.isConnected = false;
         showError('You are offline. Changes will be saved when connection is restored.');
     });
 }
@@ -517,6 +618,11 @@ function setupEventListeners() {
 function initializeApp() {
     try {
         console.log('Initializing LunchVote app...');
+        
+        // Verify Firebase initialization
+        if (!app || !db || !placesRef) {
+            throw new Error('Firebase not properly initialized');
+        }
         
         // Set up event listeners
         setupEventListeners();
@@ -547,8 +653,10 @@ function initializeApp() {
 function cleanup() {
     try {
         // Remove the database listener to prevent memory leaks
-        off(placesRef);
-        console.log('Cleaned up database listeners');
+        if (placesRef) {
+            off(placesRef);
+            console.log('Cleaned up database listeners');
+        }
     } catch (error) {
         console.error('Error during cleanup:', error);
     }
@@ -571,6 +679,46 @@ window.addEventListener('error', (event) => {
 });
 
 // ==========================================
+// DATABASE CONNECTION TEST (FOR DEBUGGING)
+// ==========================================
+
+/**
+ * Test function to verify Firebase connection and write permissions
+ * Call this function in browser console: testFirebaseConnection()
+ */
+window.testFirebaseConnection = async function() {
+    try {
+        console.log('Testing Firebase connection...');
+        
+        // Test write
+        const testRef = ref(db, 'test');
+        await push(testRef, {
+            message: 'Connection test',
+            timestamp: serverTimestamp()
+        });
+        console.log('✅ Write test successful');
+        
+        // Test read
+        const snapshot = await get(testRef);
+        console.log('✅ Read test successful', snapshot.val());
+        
+        console.log('🎉 Firebase connection working perfectly!');
+        return true;
+        
+    } catch (error) {
+        console.error('❌ Firebase connection test failed:', error);
+        console.error('Error code:', error.code);
+        console.error('Error message:', error.message);
+        
+        if (error.code === 'PERMISSION_DENIED') {
+            console.error('🔒 Fix: Update your Firebase Security Rules to allow read/write access');
+        }
+        
+        return false;
+    }
+};
+
+// ==========================================
 // START THE APPLICATION
 // ==========================================
 
@@ -588,14 +736,4 @@ if (document.readyState === 'loading') {
 
 // Export functions for testing purposes (if needed)
 // Uncomment the following lines if you want to test individual functions
-// window.LunchVoteApp = {
-//     handleAddPlace,
-//     handleVote,
-//     validatePlaceName,
-//     sanitizeInput,
-//     doesPlaceExist,
-//     renderPlaces,
-//     showError,
-//     hideError,
-//     appState
-// };
+// window.LunchV
