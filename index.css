@@ -120,6 +120,77 @@ body {
 }
 
 /* ==========================================
+   LEADING PLACE DISPLAY
+   ========================================== */
+
+.leading-place {
+    background: linear-gradient(135deg, #ffd700, #ffed4e);
+    border: 2px solid #f57c00;
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    box-shadow: 0 8px 25px rgba(255, 215, 0, 0.3);
+    animation: glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes glow {
+    from {
+        box-shadow: 0 8px 25px rgba(255, 215, 0, 0.3);
+    }
+    to {
+        box-shadow: 0 8px 30px rgba(255, 215, 0, 0.5);
+    }
+}
+
+.leading-icon {
+    font-size: 3rem;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    animation: bounce 2s ease-in-out infinite;
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-10px);
+    }
+    60% {
+        transform: translateY(-5px);
+    }
+}
+
+.leading-info {
+    flex: 1;
+}
+
+.leading-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #b8860b;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 5px;
+}
+
+.leading-name {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #8b4513;
+    margin-bottom: 5px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.leading-stats {
+    font-size: 1rem;
+    color: #b8860b;
+    font-weight: 500;
+}
+
+/* ==========================================
    PLACES LIST SECTION
    ========================================== */
 
@@ -353,6 +424,25 @@ body {
     .add-btn {
         width: 100%;
         min-width: auto;
+    }
+    
+    .leading-place {
+        flex-direction: column;
+        text-align: center;
+        gap: 15px;
+        padding: 20px 15px;
+    }
+    
+    .leading-icon {
+        font-size: 2.5rem;
+    }
+    
+    .leading-name {
+        font-size: 1.3rem;
+    }
+    
+    .leading-stats {
+        font-size: 0.9rem;
     }
     
     .place-item {

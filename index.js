@@ -27,11 +27,13 @@ let firebaseImports = null;
 const placeForm = document.getElementById("placeForm");           // Form for adding new places
 const placeInput = document.getElementById("placeInput");         // Input field for place name
 const addBtn = document.getElementById("addBtn");                 // Submit button
-const testBtn = document.getElementById("testBtn");               // Test button for debugging
 const placesList = document.getElementById("placesList");         // Container for place list
 const loadingIndicator = document.getElementById("loadingIndicator"); // Loading message
 const errorMessage = document.getElementById("errorMessage");     // Error message container
 const emptyState = document.getElementById("emptyState");         // Empty state message
+const leadingPlace = document.getElementById("leadingPlace");     // Leading place display
+const leadingName = document.getElementById("leadingName");       // Leading place name
+const leadingStats = document.getElementById("leadingStats");     // Leading place stats
 
 // ==========================================
 // APPLICATION STATE
@@ -120,6 +122,22 @@ function sanitizeInput(str) {
 }
 
 /**
+ * Updates the UI based on current application state
+ */
+function updateUI() {
+    const hasPlaces = Object.keys(appState.places).length > 0;
+    
+    // Show/hide loading indicator
+    loadingIndicator.style.display = appState.isLoading ? 'block' : 'none';
+    
+    // Show/hide empty state
+    emptyState.style.display = (!appState.isLoading && !hasPlaces) ? 'block' : 'none';
+    
+    // Show/hide places list
+    placesList.style.display = (!appState.isLoading && hasPlaces) ? 'block' : 'none';
+}
+
+/**
  * Checks if a place name already exists (case-insensitive)
  * @param {string} newName - The name to check
  * @returns {boolean} - True if name already exists
@@ -138,19 +156,54 @@ function doesPlaceExist(newName) {
 }
 
 /**
- * Updates the UI based on current application state
+ * Updates the leading place display
+ * @param {Array} placesArray - Sorted array of places
  */
-function updateUI() {
-    const hasPlaces = Object.keys(appState.places).length > 0;
+function updateLeadingPlace(placesArray) {
+    if (!placesArray || placesArray.length === 0) {
+        // Hide leading place display if no places
+        leadingPlace.style.display = 'none';
+        return;
+    }
     
-    // Show/hide loading indicator
-    loadingIndicator.style.display = appState.isLoading ? 'block' : 'none';
+    // Get the place with the most votes (first in sorted array)
+    const leader = placesArray[0];
+    const leaderVotes = leader.votes || 0;
     
-    // Show/hide empty state
-    emptyState.style.display = (!appState.isLoading && !hasPlaces) ? 'block' : 'none';
+    // Only show leading place if there are votes
+    if (leaderVotes === 0) {
+        leadingPlace.style.display = 'none';
+        return;
+    }
     
-    // Show/hide places list
-    placesList.style.display = (!appState.isLoading && hasPlaces) ? 'block' : 'none';
+    // Check if there's a tie for first place
+    const tiePlaces = placesArray.filter(place => (place.votes || 0) === leaderVotes);
+    
+    if (tiePlaces.length > 1) {
+        // Handle tie scenario
+        leadingName.textContent = `${tiePlaces.length}-Way Tie!`;
+        leadingStats.textContent = `${tiePlaces.length} places tied with ${leaderVotes} ${leaderVotes === 1 ? 'vote' : 'votes'} each`;
+    } else {
+        // Single leader
+        leadingName.textContent = leader.name;
+        
+        // Calculate lead margin
+        let leadMargin = '';
+        if (placesArray.length > 1) {
+            const secondPlace = placesArray[1];
+            const secondVotes = secondPlace.votes || 0;
+            const margin = leaderVotes - secondVotes;
+            
+            if (margin > 0) {
+                leadMargin = ` • Leading by ${margin} ${margin === 1 ? 'vote' : 'votes'}`;
+            }
+        }
+        
+        leadingStats.textContent = `${leaderVotes} ${leaderVotes === 1 ? 'vote' : 'votes'}${leadMargin}`;
+    }
+    
+    // Show the leading place display
+    leadingPlace.style.display = 'flex';
 }
 
 // ==========================================
@@ -485,6 +538,8 @@ function renderPlaces(placesData) {
     // If no places exist, we're done (empty state will be shown)
     if (!placesData) {
         console.log('📭 No places to display');
+        // Hide leading place display
+        leadingPlace.style.display = 'none';
         return;
     }
     
@@ -503,6 +558,9 @@ function renderPlaces(placesData) {
         // If votes are equal, sort by creation time (newest first)
         return (b.createdAt || 0) - (a.createdAt || 0);
     });
+    
+    // Update the leading place display
+    updateLeadingPlace(placesArray);
     
     // Create and append each place element
     placesArray.forEach(place => {
@@ -617,23 +675,6 @@ window.testFirebaseConnection = async function() {
 function setupEventListeners() {
     // Form submission for adding new places
     placeForm.addEventListener("submit", handleAddPlace);
-    
-    // Test button for Firebase debugging
-    if (testBtn) {
-        testBtn.addEventListener("click", async () => {
-            testBtn.disabled = true;
-            testBtn.textContent = "🧪 Testing...";
-            
-            const success = await window.testFirebaseConnection();
-            
-            testBtn.disabled = false;
-            testBtn.textContent = success ? "✅ Test Passed!" : "❌ Test Failed!";
-            
-            setTimeout(() => {
-                testBtn.textContent = "🧪 Test Firebase Connection";
-            }, 3000);
-        });
-    }
     
     // Input field enhancements
     placeInput.addEventListener('input', () => {

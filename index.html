@@ -30,17 +30,20 @@
                     Add Place
                 </button>
             </form>
-            
-            <!-- Debug button for testing -->
-            <div style="margin-top: 15px; text-align: center;">
-                <button type="button" id="testBtn" style="background: #e53e3e; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
-                    🧪 Test Firebase Connection
-                </button>
-            </div>
         </div>
 
         <!-- Places List Section -->
         <div class="places-section">
+            <!-- Leading Place Display -->
+            <div id="leadingPlace" class="leading-place" style="display: none;">
+                <div class="leading-icon">🏆</div>
+                <div class="leading-info">
+                    <div class="leading-title">Current Leader</div>
+                    <div class="leading-name" id="leadingName">-</div>
+                    <div class="leading-stats" id="leadingStats">-</div>
+                </div>
+            </div>
+            
             <h2 class="section-title">Vote for Your Favorite!</h2>
             <div id="loadingIndicator" class="loading">
                 Loading lunch places...
