@@ -10,7 +10,7 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #5a6dcb 0%, #8c74a2 100%);
     min-height: 100vh;
     padding: 10px;
     line-height: 1.4;
@@ -34,7 +34,7 @@ body {
    ========================================== */
 
 .header {
-    background: linear-gradient(135deg, #ff6b6b, #ffa500);
+    background: linear-gradient(135deg, #2daac6, #4a9359);
     color: white;
     padding: 20px;
     text-align: center;
@@ -93,7 +93,7 @@ body {
 
 .add-btn {
     padding: 12px 20px;
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: linear-gradient(135deg, #90c53a, #8e8597);
     color: white;
     border: none;
     border-radius: 10px;
@@ -125,7 +125,7 @@ body {
    ========================================== */
 
 .leading-place {
-    background: linear-gradient(135deg, #ffd700, #ffed4e);
+    background: linear-gradient(135deg, #a29839, #86be31);
     border: 2px solid #f57c00;
     border-radius: 12px;
     padding: 15px;
@@ -133,7 +133,7 @@ body {
     display: flex;
     align-items: center;
     gap: 15px;
-    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.3);
+    box-shadow: 0 6px 20px rgba(89, 76, 5, 0.3);
     animation: glow 2s ease-in-out infinite alternate;
 }
 
@@ -214,7 +214,7 @@ body {
 }
 
 .place-item {
-    background: white;
+    background: rgb(137, 91, 134);
     border: 2px solid #e2e8f0;
     border-radius: 12px;
     padding: 15px;
