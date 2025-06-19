@@ -551,35 +551,49 @@ async function handleVote(placeId) {
  * @param {string} placeId - The place ID
  */
 function updateVoteButtonState(button, placeId) {
-    const userVote = getUserVote();
-    const hasVoted = userVote !== null;
-    const votedForThis = userVote === placeId;
-    
-    if (votedForThis) {
-        // User has voted for this place
-        button.textContent = "✓ Your Vote";
-        button.className = "vote-btn voted";
-        button.disabled = true;
-        button.setAttribute('aria-label', `You voted for ${appState.places[placeId]?.name}`);
-    } else if (hasVoted) {
-        // User has voted for a different place
-        button.textContent = "Change Vote";
-        button.className = "vote-btn change-vote";
-        button.disabled = false;
-        button.setAttribute('aria-label', `Change your vote to ${appState.places[placeId]?.name}`);
-    } else {
-        // User hasn't voted yet
+    try {
+        console.log('🔄 Updating button state for place:', placeId);
+        
+        const userVote = getUserVote();
+        const hasVoted = userVote !== null;
+        const votedForThis = userVote === placeId;
+        
+        console.log('📊 Button state data:', { userVote, hasVoted, votedForThis, placeId });
+        
+        if (votedForThis) {
+            // User has voted for this place
+            button.textContent = "✓ Your Vote";
+            button.className = "vote-btn voted";
+            button.disabled = true;
+            button.setAttribute('aria-label', `You voted for ${appState.places[placeId]?.name || 'this place'}`);
+        } else if (hasVoted) {
+            // User has voted for a different place
+            button.textContent = "Change Vote";
+            button.className = "vote-btn change-vote";
+            button.disabled = false;
+            button.setAttribute('aria-label', `Change your vote to ${appState.places[placeId]?.name || 'this place'}`);
+        } else {
+            // User hasn't voted yet
+            button.textContent = "Vote";
+            button.className = "vote-btn";
+            button.disabled = false;
+            button.setAttribute('aria-label', `Vote for ${appState.places[placeId]?.name || 'this place'}`);
+        }
+        
+        // Handle voting in progress state
+        if (appState.votingInProgress.has(placeId)) {
+            button.disabled = true;
+            button.textContent = hasVoted ? "Changing..." : "Voting...";
+            button.classList.add('voting');
+        }
+        
+        console.log('✅ Button state updated successfully');
+    } catch (error) {
+        console.error('❌ Error updating button state:', error);
+        // Fallback to basic state
         button.textContent = "Vote";
         button.className = "vote-btn";
         button.disabled = false;
-        button.setAttribute('aria-label', `Vote for ${appState.places[placeId]?.name}`);
-    }
-    
-    // Handle voting in progress state
-    if (appState.votingInProgress.has(placeId)) {
-        button.disabled = true;
-        button.textContent = hasVoted ? "Changing..." : "Voting...";
-        button.classList.add('voting');
     }
 }
 
@@ -590,57 +604,81 @@ function updateVoteButtonState(button, placeId) {
  * @returns {HTMLElement} - The created list item element
  */
 function createPlaceElement(placeId, placeData) {
-    // Create the main list item element
-    const li = document.createElement("li");
-    li.className = "place-item";
-    li.setAttribute('data-place-id', placeId);
-    
-    // Add special styling if user voted for this place
-    const userVote = getUserVote();
-    if (userVote === placeId) {
-        li.classList.add('user-voted');
+    try {
+        console.log('🏗️ Creating element for place:', placeId, placeData);
+        
+        // Create the main list item element
+        const li = document.createElement("li");
+        li.className = "place-item";
+        li.setAttribute('data-place-id', placeId);
+        
+        // Add special styling if user voted for this place
+        const userVote = getUserVote();
+        if (userVote === placeId) {
+            li.classList.add('user-voted');
+        }
+        
+        // Create the place info section
+        const placeInfo = document.createElement("div");
+        placeInfo.className = "place-info";
+        
+        // Create and set up the place name element
+        const placeName = document.createElement("div");
+        placeName.className = "place-name";
+        
+        // Safely set place name
+        const safePlaceName = placeData.name || 'Unknown Place';
+        placeName.textContent = safePlaceName;
+        
+        // Add user vote indicator to name if this is their choice
+        if (userVote === placeId) {
+            placeName.innerHTML = `${safePlaceName} <span class="user-vote-indicator">👤 Your Choice</span>`;
+        }
+        
+        // Create and set up the vote count element
+        const voteCount = document.createElement("div");
+        voteCount.className = "vote-count";
+        const votes = placeData.votes || 0;
+        const pluralText = votes === 1 ? 'vote' : 'votes';
+        voteCount.innerHTML = `<strong>${votes}</strong> ${pluralText}`;
+        
+        // Add elements to place info container
+        placeInfo.appendChild(placeName);
+        placeInfo.appendChild(voteCount);
+        
+        // Create the vote button
+        const voteBtn = document.createElement("button");
+        voteBtn.setAttribute('data-id', placeId);
+        
+        // Update button state based on user's voting status
+        updateVoteButtonState(voteBtn, placeId);
+        
+        // Add click event listener for voting
+        voteBtn.addEventListener('click', () => handleVote(placeId));
+        
+        // Assemble the complete list item
+        li.appendChild(placeInfo);
+        li.appendChild(voteBtn);
+        
+        console.log('✅ Element created successfully for:', safePlaceName);
+        return li;
+        
+    } catch (error) {
+        console.error('❌ Error creating place element:', error);
+        console.error('Place ID:', placeId);
+        console.error('Place data:', placeData);
+        
+        // Return a simple error element
+        const errorLi = document.createElement("li");
+        errorLi.className = "place-item error-item";
+        errorLi.innerHTML = `
+            <div class="place-info">
+                <div class="place-name">Error loading place</div>
+                <div class="vote-count">Please refresh</div>
+            </div>
+        `;
+        return errorLi;
     }
-    
-    // Create the place info section
-    const placeInfo = document.createElement("div");
-    placeInfo.className = "place-info";
-    
-    // Create and set up the place name element
-    const placeName = document.createElement("div");
-    placeName.className = "place-name";
-    placeName.textContent = placeData.name;
-    
-    // Add user vote indicator to name if this is their choice
-    if (userVote === placeId) {
-        placeName.innerHTML = `${placeData.name} <span class="user-vote-indicator">👤 Your Choice</span>`;
-    }
-    
-    // Create and set up the vote count element
-    const voteCount = document.createElement("div");
-    voteCount.className = "vote-count";
-    const votes = placeData.votes || 0;
-    const pluralText = votes === 1 ? 'vote' : 'votes';
-    voteCount.innerHTML = `<strong>${votes}</strong> ${pluralText}`;
-    
-    // Add elements to place info container
-    placeInfo.appendChild(placeName);
-    placeInfo.appendChild(voteCount);
-    
-    // Create the vote button
-    const voteBtn = document.createElement("button");
-    voteBtn.setAttribute('data-id', placeId);
-    
-    // Update button state based on user's voting status
-    updateVoteButtonState(voteBtn, placeId);
-    
-    // Add click event listener for voting
-    voteBtn.addEventListener('click', () => handleVote(placeId));
-    
-    // Assemble the complete list item
-    li.appendChild(placeInfo);
-    li.appendChild(voteBtn);
-    
-    return li;
 }
 
 /**
@@ -648,66 +686,134 @@ function createPlaceElement(placeId, placeData) {
  * @param {Object} placesData - The places data from Firebase
  */
 function renderPlaces(placesData) {
-    console.log('🔄 Rendering places:', placesData);
+    console.log('🔄 Starting renderPlaces function');
+    console.log('📊 Places data received:', placesData);
+    console.log('📊 Data type:', typeof placesData);
+    console.log('📊 Is null?', placesData === null);
+    console.log('📊 Is undefined?', placesData === undefined);
     
-    // Clear the existing list
-    placesList.innerHTML = "";
-    
-    // Update application state
-    appState.places = placesData || {};
-    appState.isLoading = false;
-    
-    // Load user's vote from storage
-    const storedVote = getUserVote();
-    
-    // Check if user's stored vote still exists in the data
-    if (storedVote && !appState.places[storedVote]) {
-        console.log('🧹 User voted place no longer exists, clearing vote');
-        saveUserVote(null);
-    }
-    
-    // Update UI based on whether we have places
-    updateUI();
-    
-    // If no places exist, we're done (empty state will be shown)
-    if (!placesData) {
-        console.log('📭 No places to display');
-        // Hide leading place display
-        leadingPlace.style.display = 'none';
-        return;
-    }
-    
-    // Convert the places object to an array and sort by vote count (descending)
-    const placesArray = Object.entries(placesData).map(([id, data]) => ({
-        id,
-        ...data
-    }));
-    
-    // Sort places by vote count (highest first), then by creation time (newest first)
-    placesArray.sort((a, b) => {
-        // First sort by votes (descending)
-        if (b.votes !== a.votes) {
-            return (b.votes || 0) - (a.votes || 0);
+    try {
+        // Clear the existing list
+        placesList.innerHTML = "";
+        console.log('🧹 Cleared existing places list');
+        
+        // Update application state
+        appState.places = placesData || {};
+        appState.isLoading = false;
+        console.log('📊 Updated app state with places:', Object.keys(appState.places).length, 'places');
+        
+        // Load user's vote from storage
+        const storedVote = getUserVote();
+        console.log('👤 User stored vote:', storedVote);
+        
+        // Check if user's stored vote still exists in the data
+        if (storedVote && placesData && !placesData[storedVote]) {
+            console.log('🧹 User voted place no longer exists, clearing vote');
+            saveUserVote(null);
         }
-        // If votes are equal, sort by creation time (newest first)
-        return (b.createdAt || 0) - (a.createdAt || 0);
-    });
-    
-    // Update the leading place display
-    updateLeadingPlace(placesArray);
-    
-    // Create and append each place element
-    placesArray.forEach(place => {
-        const placeElement = createPlaceElement(place.id, place);
-        placesList.appendChild(placeElement);
-    });
-    
-    const userVoteName = getUserVotedPlaceName();
-    if (userVoteName) {
-        console.log('👤 User has voted for:', userVoteName);
+        
+        // Update UI based on whether we have places
+        updateUI();
+        console.log('✅ UI updated');
+        
+        // If no places exist, we're done (empty state will be shown)
+        if (!placesData) {
+            console.log('📭 No places data to display');
+            // Hide leading place display
+            leadingPlace.style.display = 'none';
+            return;
+        }
+        
+        // Convert the places object to an array
+        console.log('🔄 Converting places object to array...');
+        const placesArray = [];
+        
+        for (const [id, data] of Object.entries(placesData)) {
+            console.log('🔄 Processing place:', id, data);
+            
+            // Validate place data
+            if (!data) {
+                console.warn('⚠️ Empty place data for ID:', id);
+                continue;
+            }
+            
+            placesArray.push({
+                id,
+                name: data.name || 'Unknown Place',
+                votes: data.votes || 0,
+                createdAt: data.createdAt || 0,
+                lastVoted: data.lastVoted || null
+            });
+        }
+        
+        console.log('✅ Places array created:', placesArray.length, 'places');
+        
+        // Sort places by vote count (highest first), then by creation time (newest first)
+        console.log('🔄 Sorting places...');
+        placesArray.sort((a, b) => {
+            // First sort by votes (descending)
+            if (b.votes !== a.votes) {
+                return (b.votes || 0) - (a.votes || 0);
+            }
+            // If votes are equal, sort by creation time (newest first)
+            return (b.createdAt || 0) - (a.createdAt || 0);
+        });
+        console.log('✅ Places sorted');
+        
+        // Update the leading place display
+        console.log('🔄 Updating leading place display...');
+        updateLeadingPlace(placesArray);
+        console.log('✅ Leading place updated');
+        
+        // Create and append each place element
+        console.log('🔄 Creating place elements...');
+        let elementsCreated = 0;
+        
+        placesArray.forEach((place, index) => {
+            try {
+                console.log(`🏗️ Creating element ${index + 1}/${placesArray.length}:`, place.name);
+                const placeElement = createPlaceElement(place.id, place);
+                placesList.appendChild(placeElement);
+                elementsCreated++;
+            } catch (elementError) {
+                console.error('❌ Error creating individual place element:', elementError);
+                console.error('Problem place:', place);
+            }
+        });
+        
+        console.log('✅ Created', elementsCreated, 'place elements');
+        
+        const userVoteName = getUserVotedPlaceName();
+        if (userVoteName) {
+            console.log('👤 User has voted for:', userVoteName);
+        }
+        
+        console.log('🎉 renderPlaces completed successfully!');
+        
+    } catch (error) {
+        console.error("💥 CRITICAL ERROR in renderPlaces:");
+        console.error("Error object:", error);
+        console.error("Error name:", error.name);
+        console.error("Error message:", error.message);
+        console.error("Error stack:", error.stack);
+        console.error("Places data that caused error:", placesData);
+        console.error("App state:", appState);
+        
+        // Show user-friendly error
+        showError("Failed to display lunch places. Please refresh the page.");
+        
+        // Reset loading state
+        appState.isLoading = false;
+        updateUI();
+        
+        // Try to show at least the basic UI
+        try {
+            leadingPlace.style.display = 'none';
+            placesList.innerHTML = '<li class="place-item error-item"><div class="place-info"><div class="place-name">Error loading places</div><div class="vote-count">Please refresh the page</div></div></li>';
+        } catch (fallbackError) {
+            console.error("❌ Even fallback UI failed:", fallbackError);
+        }
     }
-    
-    console.log('✅ Rendered', placesArray.length, 'places');
 }
 
 // ==========================================
