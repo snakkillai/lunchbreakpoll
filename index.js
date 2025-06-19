@@ -519,7 +519,7 @@ async function handleVote(placeId) {
         const voteBtn = document.querySelector(`[data-id="${placeId}"]`);
         if (voteBtn) {
             voteBtn.disabled = true;
-            voteBtn.textContent = isChangingVote ? "Changing..." : "Voting...";
+            voteBtn.textContent = isChangingVote ? "Changed" : "Voting...";
             voteBtn.classList.add('voting');
         }
         

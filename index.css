@@ -125,15 +125,15 @@ body {
    ========================================== */
 
 .leading-place {
-    background: linear-gradient(135deg, #ffd700, #ffed4e);
-    border: 2px solid #f57c00;
+    background: linear-gradient(135deg, #d8db2b, #d4b240);
+    border: 2px solid #d5580f;
     border-radius: 12px;
     padding: 15px;
     margin-bottom: 20px;
     display: flex;
     align-items: center;
     gap: 15px;
-    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.3);
+    box-shadow: 0 6px 20px rgba(141, 130, 68, 0.3);
     animation: glow 2s ease-in-out infinite alternate;
 }
 
