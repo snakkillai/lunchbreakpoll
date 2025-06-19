@@ -10,7 +10,7 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #aab583 0%, #4b91a2 100%);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
     padding: 10px;
     line-height: 1.4;
@@ -34,7 +34,7 @@ body {
    ========================================== */
 
 .header {
-    background: linear-gradient(135deg, #c36718, #e1a12a);
+    background: linear-gradient(135deg, #ff6b6b, #ffa500);
     color: white;
     padding: 20px;
     text-align: center;
@@ -296,34 +296,6 @@ body {
     box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
 }
 
-.vote-btn.voted.current {
-    background: linear-gradient(135deg, #2196F3, #1976D2);
-    animation: pulse-blue 1s ease-in-out 3;
-}
-
-.vote-btn.previous {
-    background: linear-gradient(135deg, #FF9800, #F57C00);
-    cursor: default;
-    opacity: 0.8;
-}
-
-.vote-btn.previous:hover {
-    transform: none;
-    box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
-}
-
-@keyframes pulse-blue {
-    0% {
-        box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
-    }
-    50% {
-        box-shadow: 0 6px 20px rgba(33, 150, 243, 0.6);
-    }
-    100% {
-        box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
-    }
-}
-
 .vote-btn.change-vote {
     background: linear-gradient(135deg, #2196F3, #1976D2);
 }
@@ -354,32 +326,6 @@ body {
     background: rgba(76, 175, 80, 0.1);
     border-radius: 10px;
     border: 1px solid rgba(76, 175, 80, 0.2);
-}
-
-.user-vote-indicator.current {
-    color: #2196F3;
-    background: rgba(33, 150, 243, 0.1);
-    border: 1px solid rgba(33, 150, 243, 0.2);
-    animation: pulse-indicator 1s ease-in-out 3;
-}
-
-.user-vote-indicator.previous {
-    color: #FF9800;
-    background: rgba(255, 152, 0, 0.1);
-    border: 1px solid rgba(255, 152, 0, 0.2);
-    opacity: 0.8;
-}
-
-@keyframes pulse-indicator {
-    0% {
-        background: rgba(33, 150, 243, 0.1);
-    }
-    50% {
-        background: rgba(33, 150, 243, 0.2);
-    }
-    100% {
-        background: rgba(33, 150, 243, 0.1);
-    }
 }
 
 /* ==========================================
