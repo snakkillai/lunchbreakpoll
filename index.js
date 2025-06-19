@@ -46,7 +46,8 @@ let appState = {
     isSubmitting: false,          // Whether we're currently adding a place
     votingInProgress: new Set(),  // Track which places are being voted on
     isConnected: false,           // Track Firebase connection status
-    isInitialized: false          // Track if Firebase is fully initialized
+    isInitialized: false,         // Track if Firebase is fully initialized
+    userVote: null                // Track which place the user has voted for
 };
 
 // ==========================================
@@ -119,6 +120,50 @@ function sanitizeInput(str) {
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
+}
+
+// ==========================================
+// USER VOTE TRACKING
+// ==========================================
+
+/**
+ * Gets the user's current vote from localStorage
+ * @returns {string|null} - The place ID the user voted for, or null if no vote
+ */
+function getUserVote() {
+    try {
+        return localStorage.getItem('lunchVoteChoice');
+    } catch (error) {
+        console.warn('localStorage not available:', error);
+        return appState.userVote;
+    }
+}
+
+/**
+ * Saves the user's vote to localStorage
+ * @param {string|null} placeId - The place ID to save, or null to clear vote
+ */
+function saveUserVote(placeId) {
+    try {
+        if (placeId) {
+            localStorage.setItem('lunchVoteChoice', placeId);
+        } else {
+            localStorage.removeItem('lunchVoteChoice');
+        }
+        appState.userVote = placeId;
+    } catch (error) {
+        console.warn('localStorage not available:', error);
+        appState.userVote = placeId;
+    }
+}
+
+/**
+ * Checks if the user has already voted
+ * @returns {boolean} - True if user has voted
+ */
+function hasUserVoted() {
+    const userVote = getUserVote();
+    return userVote !== null && appState.places[userVote];
 }
 
 /**
@@ -378,7 +423,7 @@ async function handleAddPlace(e) {
 // ==========================================
 
 /**
- * Handles voting for a lunch place
+ * Handles voting for a lunch place with vote tracking
  * @param {string} placeId - The unique ID of the place to vote for
  */
 async function handleVote(placeId) {
@@ -399,6 +444,16 @@ async function handleVote(placeId) {
         return;
     }
     
+    const currentUserVote = getUserVote();
+    const isChangingVote = currentUserVote && currentUserVote !== placeId;
+    const isVotingSamePlace = currentUserVote === placeId;
+    
+    // Don't allow voting for the same place twice
+    if (isVotingSamePlace) {
+        showError("You've already voted for this place!");
+        return;
+    }
+    
     try {
         // Add this place to the voting-in-progress set
         appState.votingInProgress.add(placeId);
@@ -407,16 +462,38 @@ async function handleVote(placeId) {
         const voteBtn = document.querySelector(`[data-id="${placeId}"]`);
         if (voteBtn) {
             voteBtn.disabled = true;
-            voteBtn.textContent = "Voting...";
+            voteBtn.textContent = isChangingVote ? "Changing..." : "Voting...";
             voteBtn.classList.add('voting');
         }
         
-        console.log('🗳️ Voting for place:', placeId);
+        console.log('🗳️ Processing vote for place:', placeId);
+        console.log('📊 Current user vote:', currentUserVote);
+        console.log('🔄 Is changing vote:', isChangingVote);
         
-        // Get reference to the specific place in the database
+        // If user is changing their vote, we need to decrement the old place first
+        if (isChangingVote && appState.places[currentUserVote]) {
+            console.log('📉 Removing vote from previous place:', currentUserVote);
+            
+            const oldPlaceRef = firebaseImports.ref(firebaseDb, `lunchPlaces/${currentUserVote}`);
+            const oldSnapshot = await firebaseImports.get(oldPlaceRef);
+            
+            if (oldSnapshot.exists()) {
+                const oldPlace = oldSnapshot.val();
+                const oldVotes = Math.max(0, (oldPlace.votes || 0) - 1); // Ensure votes don't go below 0
+                
+                await firebaseImports.update(oldPlaceRef, {
+                    votes: oldVotes,
+                    lastVoted: oldVotes > 0 ? Date.now() : null
+                });
+                
+                console.log('✅ Previous vote removed');
+            }
+        }
+        
+        // Now add vote to the new place
+        console.log('📈 Adding vote to new place:', placeId);
+        
         const placeRef = firebaseImports.ref(firebaseDb, `lunchPlaces/${placeId}`);
-        
-        // Get the current data for this place - same as debug script
         const snapshot = await firebaseImports.get(placeRef);
         
         if (!snapshot.exists()) {
@@ -432,13 +509,20 @@ async function handleVote(placeId) {
             lastVoted: Date.now()              // Update last voted timestamp
         };
         
-        // Update the vote count in Firebase - same as debug script
+        // Update the vote count in Firebase
         await firebaseImports.update(placeRef, updates);
+        
+        // Save user's vote choice
+        saveUserVote(placeId);
         
         console.log('✅ Vote recorded successfully');
         
         // Show success feedback
-        showSuccess(`Voted for: ${currentPlace.name}`);
+        if (isChangingVote) {
+            showSuccess(`Changed your vote to: ${currentPlace.name}`);
+        } else {
+            showSuccess(`Voted for: ${currentPlace.name}`);
+        }
         
     } catch (error) {
         // Handle any errors that occur during voting
@@ -449,8 +533,7 @@ async function handleVote(placeId) {
         const voteBtn = document.querySelector(`[data-id="${placeId}"]`);
         if (voteBtn) {
             voteBtn.disabled = false;
-            voteBtn.textContent = "Vote";
-            voteBtn.classList.remove('voting');
+            updateVoteButtonState(voteBtn, placeId);
         }
     } finally {
         // Remove this place from the voting-in-progress set
@@ -461,6 +544,44 @@ async function handleVote(placeId) {
 // ==========================================
 // REAL-TIME DATA RENDERING
 // ==========================================
+
+/**
+ * Updates the vote button state based on user's voting status
+ * @param {HTMLElement} button - The vote button element
+ * @param {string} placeId - The place ID
+ */
+function updateVoteButtonState(button, placeId) {
+    const userVote = getUserVote();
+    const hasVoted = userVote !== null;
+    const votedForThis = userVote === placeId;
+    
+    if (votedForThis) {
+        // User has voted for this place
+        button.textContent = "✓ Your Vote";
+        button.className = "vote-btn voted";
+        button.disabled = true;
+        button.setAttribute('aria-label', `You voted for ${appState.places[placeId]?.name}`);
+    } else if (hasVoted) {
+        // User has voted for a different place
+        button.textContent = "Change Vote";
+        button.className = "vote-btn change-vote";
+        button.disabled = false;
+        button.setAttribute('aria-label', `Change your vote to ${appState.places[placeId]?.name}`);
+    } else {
+        // User hasn't voted yet
+        button.textContent = "Vote";
+        button.className = "vote-btn";
+        button.disabled = false;
+        button.setAttribute('aria-label', `Vote for ${appState.places[placeId]?.name}`);
+    }
+    
+    // Handle voting in progress state
+    if (appState.votingInProgress.has(placeId)) {
+        button.disabled = true;
+        button.textContent = hasVoted ? "Changing..." : "Voting...";
+        button.classList.add('voting');
+    }
+}
 
 /**
  * Renders a single place item in the list
@@ -474,6 +595,12 @@ function createPlaceElement(placeId, placeData) {
     li.className = "place-item";
     li.setAttribute('data-place-id', placeId);
     
+    // Add special styling if user voted for this place
+    const userVote = getUserVote();
+    if (userVote === placeId) {
+        li.classList.add('user-voted');
+    }
+    
     // Create the place info section
     const placeInfo = document.createElement("div");
     placeInfo.className = "place-info";
@@ -482,6 +609,11 @@ function createPlaceElement(placeId, placeData) {
     const placeName = document.createElement("div");
     placeName.className = "place-name";
     placeName.textContent = placeData.name;
+    
+    // Add user vote indicator to name if this is their choice
+    if (userVote === placeId) {
+        placeName.innerHTML = `${placeData.name} <span class="user-vote-indicator">👤 Your Choice</span>`;
+    }
     
     // Create and set up the vote count element
     const voteCount = document.createElement("div");
@@ -496,17 +628,10 @@ function createPlaceElement(placeId, placeData) {
     
     // Create the vote button
     const voteBtn = document.createElement("button");
-    voteBtn.className = "vote-btn";
-    voteBtn.textContent = "Vote";
     voteBtn.setAttribute('data-id', placeId);
-    voteBtn.setAttribute('aria-label', `Vote for ${placeData.name}`);
     
-    // Check if voting is in progress for this place
-    if (appState.votingInProgress.has(placeId)) {
-        voteBtn.disabled = true;
-        voteBtn.textContent = "Voting...";
-        voteBtn.classList.add('voting');
-    }
+    // Update button state based on user's voting status
+    updateVoteButtonState(voteBtn, placeId);
     
     // Add click event listener for voting
     voteBtn.addEventListener('click', () => handleVote(placeId));
@@ -531,6 +656,15 @@ function renderPlaces(placesData) {
     // Update application state
     appState.places = placesData || {};
     appState.isLoading = false;
+    
+    // Load user's vote from storage
+    const storedVote = getUserVote();
+    
+    // Check if user's stored vote still exists in the data
+    if (storedVote && !appState.places[storedVote]) {
+        console.log('🧹 User voted place no longer exists, clearing vote');
+        saveUserVote(null);
+    }
     
     // Update UI based on whether we have places
     updateUI();
@@ -567,6 +701,11 @@ function renderPlaces(placesData) {
         const placeElement = createPlaceElement(place.id, place);
         placesList.appendChild(placeElement);
     });
+    
+    const userVoteName = getUserVotedPlaceName();
+    if (userVoteName) {
+        console.log('👤 User has voted for:', userVoteName);
+    }
     
     console.log('✅ Rendered', placesArray.length, 'places');
 }

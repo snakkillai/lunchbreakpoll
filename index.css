@@ -34,7 +34,7 @@ body {
    ========================================== */
 
 .header {
-    background: linear-gradient(135deg, #ff6b6b, #ffa500);
+    background: linear-gradient(135deg, #93adcb, #2a999e);
     color: white;
     padding: 30px;
     text-align: center;
@@ -126,12 +126,12 @@ body {
 .leading-place {
     background: linear-gradient(135deg, #ffd700, #ffed4e);
     border: 2px solid #f57c00;
-    border-radius: 15px;
-    padding: 20px;
+    border-radius: 5px;
+    padding: 5px;
     margin-bottom: 25px;
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 5px;
     box-shadow: 0 8px 25px rgba(255, 215, 0, 0.3);
     animation: glow 2s ease-in-out infinite alternate;
 }
@@ -282,6 +282,49 @@ body {
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
+}
+
+/* Vote button states */
+.vote-btn.voted {
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    cursor: default;
+}
+
+.vote-btn.voted:hover {
+    transform: none;
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+}
+
+.vote-btn.change-vote {
+    background: linear-gradient(135deg, #2196F3, #1976D2);
+}
+
+.vote-btn.change-vote:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(33, 150, 243, 0.3);
+}
+
+/* User voted place styling */
+.place-item.user-voted {
+    border-color: #4CAF50;
+    background: linear-gradient(135deg, #f8fff8, #ffffff);
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.2);
+}
+
+.place-item.user-voted:hover {
+    border-color: #4CAF50;
+    box-shadow: 0 8px 25px rgba(76, 175, 80, 0.3);
+}
+
+.user-vote-indicator {
+    font-size: 0.8rem;
+    color: #4CAF50;
+    font-weight: 500;
+    margin-left: 10px;
+    padding: 2px 8px;
+    background: rgba(76, 175, 80, 0.1);
+    border-radius: 12px;
+    border: 1px solid rgba(76, 175, 80, 0.2);
 }
 
 /* ==========================================
