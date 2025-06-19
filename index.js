@@ -252,6 +252,63 @@ function updateLeadingPlace(placesArray) {
 }
 
 // ==========================================
+// DIAGNOSTIC FUNCTIONS
+// ==========================================
+
+/**
+ * Simple diagnostic function to test basic functionality
+ */
+window.diagnoseLunchVote = function() {
+    console.log('🔍 === LUNCHVOTE DIAGNOSTICS ===');
+    
+    try {
+        console.log('1. ✅ JavaScript running');
+        
+        console.log('2. Firebase State:');
+        console.log('   - App initialized:', !!firebaseApp);
+        console.log('   - Database initialized:', !!firebaseDb);
+        console.log('   - Places ref initialized:', !!placesRef);
+        console.log('   - Firebase imports:', !!firebaseImports);
+        
+        console.log('3. App State:');
+        console.log('   - Is initialized:', appState.isInitialized);
+        console.log('   - Is connected:', appState.isConnected);
+        console.log('   - Is loading:', appState.isLoading);
+        console.log('   - Places count:', Object.keys(appState.places).length);
+        console.log('   - Places data:', appState.places);
+        
+        console.log('4. DOM Elements:');
+        console.log('   - Places list exists:', !!placesList);
+        console.log('   - Loading indicator exists:', !!loadingIndicator);
+        console.log('   - Error message exists:', !!errorMessage);
+        
+        console.log('5. User Vote:');
+        console.log('   - Current vote:', getUserVote());
+        console.log('   - LocalStorage works:', typeof(Storage) !== "undefined");
+        
+        // Test Firebase connection
+        if (firebaseImports && placesRef) {
+            console.log('6. 🧪 Testing Firebase read...');
+            firebaseImports.get(placesRef)
+                .then(snapshot => {
+                    console.log('   ✅ Firebase read successful');
+                    console.log('   📊 Raw data:', snapshot.val());
+                })
+                .catch(error => {
+                    console.log('   ❌ Firebase read failed:', error);
+                });
+        } else {
+            console.log('6. ❌ Firebase not ready for testing');
+        }
+        
+    } catch (error) {
+        console.log('❌ Diagnostic error:', error);
+    }
+    
+    console.log('🔍 === END DIAGNOSTICS ===');
+};
+
+// ==========================================
 // FIREBASE INITIALIZATION - Using Debug Script Pattern
 // ==========================================
 
@@ -686,132 +743,186 @@ function createPlaceElement(placeId, placeData) {
  * @param {Object} placesData - The places data from Firebase
  */
 function renderPlaces(placesData) {
-    console.log('🔄 Starting renderPlaces function');
-    console.log('📊 Places data received:', placesData);
+    console.log('🔄 === RENDER PLACES START ===');
+    console.log('📊 Input data:', placesData);
     console.log('📊 Data type:', typeof placesData);
-    console.log('📊 Is null?', placesData === null);
-    console.log('📊 Is undefined?', placesData === undefined);
+    console.log('📊 Is array:', Array.isArray(placesData));
+    console.log('📊 Is null:', placesData === null);
+    console.log('📊 Is undefined:', placesData === undefined);
     
     try {
-        // Clear the existing list
+        // Step 1: Clear the existing list
+        console.log('🧹 Step 1: Clearing existing list...');
+        if (!placesList) {
+            throw new Error('Places list DOM element not found');
+        }
         placesList.innerHTML = "";
-        console.log('🧹 Cleared existing places list');
+        console.log('✅ List cleared');
         
-        // Update application state
+        // Step 2: Update application state
+        console.log('📊 Step 2: Updating app state...');
         appState.places = placesData || {};
         appState.isLoading = false;
-        console.log('📊 Updated app state with places:', Object.keys(appState.places).length, 'places');
+        console.log('✅ App state updated. Places count:', Object.keys(appState.places).length);
         
-        // Load user's vote from storage
-        const storedVote = getUserVote();
-        console.log('👤 User stored vote:', storedVote);
-        
-        // Check if user's stored vote still exists in the data
-        if (storedVote && placesData && !placesData[storedVote]) {
-            console.log('🧹 User voted place no longer exists, clearing vote');
-            saveUserVote(null);
+        // Step 3: Handle user vote
+        console.log('👤 Step 3: Processing user vote...');
+        try {
+            const storedVote = getUserVote();
+            console.log('📊 Stored vote:', storedVote);
+            
+            if (storedVote && placesData && !placesData[storedVote]) {
+                console.log('🧹 Clearing invalid stored vote');
+                saveUserVote(null);
+            }
+        } catch (voteError) {
+            console.warn('⚠️ Error processing user vote:', voteError);
+            // Continue without user vote features
         }
         
-        // Update UI based on whether we have places
+        // Step 4: Update UI
+        console.log('🎨 Step 4: Updating UI...');
         updateUI();
         console.log('✅ UI updated');
         
-        // If no places exist, we're done (empty state will be shown)
-        if (!placesData) {
-            console.log('📭 No places data to display');
-            // Hide leading place display
-            leadingPlace.style.display = 'none';
+        // Step 5: Handle empty data
+        if (!placesData || Object.keys(placesData).length === 0) {
+            console.log('📭 No places data - showing empty state');
+            if (leadingPlace) {
+                leadingPlace.style.display = 'none';
+            }
+            console.log('✅ Empty state handled');
             return;
         }
         
-        // Convert the places object to an array
-        console.log('🔄 Converting places object to array...');
+        // Step 6: Process places data
+        console.log('🔄 Step 6: Processing places data...');
         const placesArray = [];
         
-        for (const [id, data] of Object.entries(placesData)) {
-            console.log('🔄 Processing place:', id, data);
-            
-            // Validate place data
-            if (!data) {
-                console.warn('⚠️ Empty place data for ID:', id);
-                continue;
-            }
-            
-            placesArray.push({
-                id,
-                name: data.name || 'Unknown Place',
-                votes: data.votes || 0,
-                createdAt: data.createdAt || 0,
-                lastVoted: data.lastVoted || null
+        try {
+            Object.entries(placesData).forEach(([id, data], index) => {
+                console.log(`📋 Processing place ${index + 1}: ${id}`, data);
+                
+                if (!data || typeof data !== 'object') {
+                    console.warn(`⚠️ Skipping invalid place data for ${id}:`, data);
+                    return;
+                }
+                
+                placesArray.push({
+                    id: id,
+                    name: String(data.name || 'Unknown Place'),
+                    votes: Number(data.votes || 0),
+                    createdAt: Number(data.createdAt || 0),
+                    lastVoted: data.lastVoted || null
+                });
             });
+        } catch (processingError) {
+            console.error('❌ Error processing places data:', processingError);
+            throw new Error('Failed to process places data: ' + processingError.message);
         }
         
-        console.log('✅ Places array created:', placesArray.length, 'places');
+        console.log('✅ Places array created:', placesArray.length, 'valid places');
         
-        // Sort places by vote count (highest first), then by creation time (newest first)
-        console.log('🔄 Sorting places...');
-        placesArray.sort((a, b) => {
-            // First sort by votes (descending)
-            if (b.votes !== a.votes) {
-                return (b.votes || 0) - (a.votes || 0);
+        // Step 7: Sort places
+        console.log('🔄 Step 7: Sorting places...');
+        try {
+            placesArray.sort((a, b) => {
+                const voteDiff = (b.votes || 0) - (a.votes || 0);
+                if (voteDiff !== 0) return voteDiff;
+                return (b.createdAt || 0) - (a.createdAt || 0);
+            });
+            console.log('✅ Places sorted');
+        } catch (sortError) {
+            console.error('❌ Error sorting places:', sortError);
+            // Continue with unsorted array
+        }
+        
+        // Step 8: Update leading place
+        console.log('🏆 Step 8: Updating leading place...');
+        try {
+            updateLeadingPlace(placesArray);
+            console.log('✅ Leading place updated');
+        } catch (leadingError) {
+            console.error('❌ Error updating leading place:', leadingError);
+            // Hide leading place on error
+            if (leadingPlace) {
+                leadingPlace.style.display = 'none';
             }
-            // If votes are equal, sort by creation time (newest first)
-            return (b.createdAt || 0) - (a.createdAt || 0);
-        });
-        console.log('✅ Places sorted');
+        }
         
-        // Update the leading place display
-        console.log('🔄 Updating leading place display...');
-        updateLeadingPlace(placesArray);
-        console.log('✅ Leading place updated');
-        
-        // Create and append each place element
-        console.log('🔄 Creating place elements...');
-        let elementsCreated = 0;
+        // Step 9: Create and append elements
+        console.log('🏗️ Step 9: Creating place elements...');
+        let successCount = 0;
+        let errorCount = 0;
         
         placesArray.forEach((place, index) => {
             try {
-                console.log(`🏗️ Creating element ${index + 1}/${placesArray.length}:`, place.name);
-                const placeElement = createPlaceElement(place.id, place);
-                placesList.appendChild(placeElement);
-                elementsCreated++;
+                console.log(`🔨 Creating element ${index + 1}/${placesArray.length}: ${place.name}`);
+                const element = createPlaceElement(place.id, place);
+                placesList.appendChild(element);
+                successCount++;
             } catch (elementError) {
-                console.error('❌ Error creating individual place element:', elementError);
-                console.error('Problem place:', place);
+                console.error(`❌ Failed to create element for ${place.name}:`, elementError);
+                errorCount++;
+                
+                // Create a simple fallback element
+                try {
+                    const fallbackElement = document.createElement('li');
+                    fallbackElement.className = 'place-item';
+                    fallbackElement.innerHTML = `
+                        <div class="place-info">
+                            <div class="place-name">${place.name || 'Unknown Place'}</div>
+                            <div class="vote-count">${place.votes || 0} votes</div>
+                        </div>
+                        <button class="vote-btn" disabled>Error</button>
+                    `;
+                    placesList.appendChild(fallbackElement);
+                } catch (fallbackError) {
+                    console.error('❌ Even fallback element failed:', fallbackError);
+                }
             }
         });
         
-        console.log('✅ Created', elementsCreated, 'place elements');
+        console.log('✅ Element creation complete. Success:', successCount, 'Errors:', errorCount);
         
-        const userVoteName = getUserVotedPlaceName();
-        if (userVoteName) {
-            console.log('👤 User has voted for:', userVoteName);
-        }
+        // Step 10: Final logging
+        console.log('🎉 RENDER PLACES COMPLETED SUCCESSFULLY!');
+        console.log('📊 Final stats:', {
+            totalPlaces: placesArray.length,
+            successfulElements: successCount,
+            failedElements: errorCount,
+            userVote: getUserVote()
+        });
         
-        console.log('🎉 renderPlaces completed successfully!');
-        
-    } catch (error) {
-        console.error("💥 CRITICAL ERROR in renderPlaces:");
-        console.error("Error object:", error);
-        console.error("Error name:", error.name);
-        console.error("Error message:", error.message);
-        console.error("Error stack:", error.stack);
-        console.error("Places data that caused error:", placesData);
+    } catch (criticalError) {
+        console.error("💥 === CRITICAL RENDER ERROR ===");
+        console.error("Error:", criticalError);
+        console.error("Stack:", criticalError.stack);
+        console.error("Input data:", placesData);
         console.error("App state:", appState);
+        console.error("=== END CRITICAL ERROR ===");
         
         // Show user-friendly error
-        showError("Failed to display lunch places. Please refresh the page.");
+        showError("Failed to display lunch places. Please check the console and refresh the page.");
         
-        // Reset loading state
+        // Reset states
         appState.isLoading = false;
         updateUI();
         
-        // Try to show at least the basic UI
+        // Show basic error message in the list
         try {
-            leadingPlace.style.display = 'none';
-            placesList.innerHTML = '<li class="place-item error-item"><div class="place-info"><div class="place-name">Error loading places</div><div class="vote-count">Please refresh the page</div></div></li>';
-        } catch (fallbackError) {
-            console.error("❌ Even fallback UI failed:", fallbackError);
+            if (placesList) {
+                placesList.innerHTML = `
+                    <li class="place-item" style="text-align: center; padding: 40px;">
+                        <div class="place-info">
+                            <div class="place-name" style="color: #c53030;">Error Loading Places</div>
+                            <div class="vote-count">Please check console and refresh page</div>
+                        </div>
+                    </li>
+                `;
+            }
+        } catch (uiError) {
+            console.error("❌ Failed to show error UI:", uiError);
         }
     }
 }
@@ -826,44 +937,81 @@ function renderPlaces(placesData) {
 function setupRealtimeListener() {
     if (!appState.isInitialized || !placesRef || !firebaseImports) {
         console.error('❌ Firebase not initialized for listener');
+        showError('Database connection not available. Please refresh the page.');
+        appState.isLoading = false;
+        updateUI();
         return;
     }
     
     console.log('🔄 Setting up real-time listener...');
     
+    // Set a timeout to catch if the listener never responds
+    const timeoutId = setTimeout(() => {
+        console.error('⏰ Database listener timeout - no response after 15 seconds');
+        showError('Database connection timeout. Please refresh the page.');
+        appState.isLoading = false;
+        updateUI();
+    }, 15000);
+    
     // Listen for changes to the lunchPlaces node in Firebase - same as debug script
     firebaseImports.onValue(placesRef, (snapshot) => {
         try {
+            // Clear the timeout since we got a response
+            clearTimeout(timeoutId);
+            
             console.log('✅ Database snapshot received');
+            console.log('📊 Snapshot exists:', snapshot.exists());
             
             // Get the data from the snapshot
             const data = snapshot.val();
-            console.log('📊 Snapshot data:', data);
+            console.log('📊 Raw snapshot data:', data);
+            console.log('📊 Data type:', typeof data);
             
             // Update connection status
             appState.isConnected = true;
             
+            // Simple data validation before rendering
+            if (data !== null && typeof data !== 'object') {
+                console.error('❌ Invalid data type received:', typeof data);
+                throw new Error('Invalid data format received from Firebase');
+            }
+            
             // Render the places with the new data
+            console.log('🔄 Calling renderPlaces with data...');
             renderPlaces(data);
             
             const placeCount = data ? Object.keys(data).length : 0;
-            console.log('✅ Successfully loaded', placeCount, 'lunch places');
+            console.log('✅ Successfully processed', placeCount, 'lunch places');
             
         } catch (error) {
-            console.error("❌ Error processing places data:", error);
-            showError("Failed to process lunch places data.");
+            // Clear timeout and handle processing errors
+            clearTimeout(timeoutId);
+            console.error("💥 CRITICAL ERROR in database listener:", error);
+            console.error("Error name:", error.name);
+            console.error("Error message:", error.message);
+            console.error("Error stack:", error.stack);
+            console.error("Snapshot data that caused error:", snapshot ? snapshot.val() : 'No snapshot');
+            
+            showError("Failed to process lunch places data. Check console for details.");
             appState.isLoading = false;
             updateUI();
         }
     }, (error) => {
-        console.error("❌ Database listener error:", error);
+        // Clear timeout and handle connection errors
+        clearTimeout(timeoutId);
+        console.error("❌ Database listener connection error:", error);
+        console.error("Error code:", error.code);
+        console.error("Error message:", error.message);
+        
         appState.isConnected = false;
         appState.isLoading = false;
         
         if (error.code === 'PERMISSION_DENIED') {
             showError("❌ Permission denied! Please check your Firebase security rules.");
+        } else if (error.code === 'NETWORK_ERROR') {
+            showError("❌ Network error. Please check your internet connection.");
         } else {
-            showError("❌ Database connection error: " + error.message);
+            showError(`❌ Database connection error: ${error.message}`);
         }
         
         updateUI();
