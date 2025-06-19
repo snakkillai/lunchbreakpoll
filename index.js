@@ -618,14 +618,14 @@ function updateVoteButtonState(button, placeId) {
         console.log('📊 Button state data:', { userVote, hasVoted, votedForThis, placeId });
         
         if (votedForThis) {
-            // User has voted for this place - CORRECTED TEXT
-            button.textContent = "Your Vote";
+            // User has voted for this place
+            button.textContent = "✓ Your Vote";
             button.className = "vote-btn voted";
             button.disabled = true;
             button.setAttribute('aria-label', `You voted for ${appState.places[placeId]?.name || 'this place'}`);
         } else if (hasVoted) {
-            // User has voted for a different place - CORRECTED TEXT
-            button.textContent = "Before Vote";
+            // User has voted for a different place
+            button.textContent = "Change Vote";
             button.className = "vote-btn change-vote";
             button.disabled = false;
             button.setAttribute('aria-label', `Change your vote to ${appState.places[placeId]?.name || 'this place'}`);
