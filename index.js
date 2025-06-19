@@ -511,49 +511,79 @@ function setupRealtimeListener() {
     if (!placesRef) {
         console.error('Places reference not available');
         showError('Database connection not available. Please refresh the page.');
+        appState.isLoading = false;
+        updateUI();
         return;
     }
     
     console.log('Setting up real-time listener...');
+    console.log('Database URL:', firebaseConfig.databaseURL);
+    console.log('Places reference path:', placesRef.toString());
+    
+    // Set a timeout to catch if the listener never responds
+    const timeoutId = setTimeout(() => {
+        console.error('Database listener timeout - no response after 10 seconds');
+        showError('Database connection timeout. Please check your Firebase configuration and try refreshing the page.');
+        appState.isLoading = false;
+        updateUI();
+    }, 10000);
     
     // Listen for changes to the lunchPlaces node in Firebase
     // onValue() sets up a real-time listener that fires whenever data changes
     onValue(placesRef, (snapshot) => {
         try {
-            console.log('Database snapshot received');
+            // Clear the timeout since we got a response
+            clearTimeout(timeoutId);
+            
+            console.log('✅ Database snapshot received successfully');
+            console.log('Snapshot exists:', snapshot.exists());
             
             // Get the data from the snapshot
             const data = snapshot.val();
             
-            console.log('Snapshot data:', data);
+            console.log('Raw snapshot data:', data);
+            console.log('Data type:', typeof data);
             
             // Update connection status
             appState.isConnected = true;
             
-            // Render the places with the new data
+            // Always call renderPlaces, even with null data (shows empty state)
             renderPlaces(data);
             
-            console.log('Places data updated:', data ? Object.keys(data).length : 0, 'places');
+            const placeCount = data ? Object.keys(data).length : 0;
+            console.log('✅ Successfully loaded', placeCount, 'lunch places');
+            
+            if (placeCount === 0) {
+                console.log('No lunch places found - showing empty state');
+            }
             
         } catch (error) {
-            // Handle any errors that occur during data processing
-            console.error("Error processing places data:", error);
-            showError("Failed to load places. Please refresh the page.");
+            // Clear timeout and handle processing errors
+            clearTimeout(timeoutId);
+            console.error("❌ Error processing places data:", error);
+            showError("Failed to process lunch places data. Please refresh the page.");
             appState.isLoading = false;
             updateUI();
         }
     }, (error) => {
-        // Handle any errors that occur with the database connection
-        console.error("Database connection error:", error);
+        // Clear timeout and handle connection errors
+        clearTimeout(timeoutId);
+        console.error("❌ Database connection error:", error);
+        console.error("Error code:", error.code);
+        console.error("Error message:", error.message);
+        
         appState.isConnected = false;
+        appState.isLoading = false;
         
         if (error.code === 'PERMISSION_DENIED') {
-            showError("Permission denied. Please check your Firebase security rules.");
+            showError("❌ Permission denied! Please update your Firebase security rules to allow read access.");
+            console.error("🔧 Fix: Go to Firebase Console → Realtime Database → Rules and set read permissions");
+        } else if (error.code === 'NETWORK_ERROR') {
+            showError("❌ Network error. Please check your internet connection.");
         } else {
-            showError("Unable to connect to the database. Please check your internet connection and refresh the page.");
+            showError(`❌ Database error: ${error.message}. Please refresh the page.`);
         }
         
-        appState.isLoading = false;
         updateUI();
     });
 }
@@ -617,27 +647,50 @@ function setupEventListeners() {
  */
 function initializeApp() {
     try {
-        console.log('Initializing LunchVote app...');
+        console.log('🚀 Initializing LunchVote app...');
+        console.log('Firebase config:', firebaseConfig);
         
         // Verify Firebase initialization
-        if (!app || !db || !placesRef) {
-            throw new Error('Firebase not properly initialized');
+        if (!app) {
+            throw new Error('Firebase app not initialized');
         }
+        console.log('✅ Firebase app initialized');
+        
+        if (!db) {
+            throw new Error('Firebase database not initialized');
+        }
+        console.log('✅ Firebase database initialized');
+        
+        if (!placesRef) {
+            throw new Error('Places reference not initialized');
+        }
+        console.log('✅ Places reference initialized');
+        
+        // Test basic connectivity
+        console.log('🔗 Testing Firebase connectivity...');
         
         // Set up event listeners
         setupEventListeners();
+        console.log('✅ Event listeners set up');
         
         // Set up real-time database listener
         setupRealtimeListener();
+        console.log('✅ Database listener set up');
         
         // Focus on the input field for better UX
         placeInput.focus();
         
-        console.log('LunchVote app initialized successfully!');
+        console.log('🎉 LunchVote app initialization complete!');
         
     } catch (error) {
-        console.error('Failed to initialize app:', error);
-        showError('Failed to initialize the app. Please refresh the page.');
+        console.error('❌ Failed to initialize app:', error);
+        console.error('Error details:', {
+            name: error.name,
+            message: error.message,
+            stack: error.stack
+        });
+        
+        showError('Failed to initialize the app. Please check the console for details and refresh the page.');
         appState.isLoading = false;
         updateUI();
     }
@@ -683,26 +736,30 @@ window.addEventListener('error', (event) => {
 // ==========================================
 
 /**
- * Test function to verify Firebase connection and write permissions
- * Call this function in browser console: testFirebaseConnection()
+ * Test function to verify Firebase connection and permissions
+ * This runs automatically on app start and can be called manually
  */
 window.testFirebaseConnection = async function() {
     try {
-        console.log('Testing Firebase connection...');
+        console.log('🧪 Testing Firebase connection...');
+        console.log('Database URL:', firebaseConfig.databaseURL);
         
-        // Test write
-        const testRef = ref(db, 'test');
+        // Test basic read access to the places node
+        console.log('Testing read access to lunchPlaces...');
+        const snapshot = await get(placesRef);
+        console.log('✅ Read access successful');
+        console.log('Current data:', snapshot.val());
+        
+        // Test write access with a simple test entry
+        console.log('Testing write access...');
+        const testRef = ref(db, 'connectionTest');
         await push(testRef, {
-            message: 'Connection test',
+            message: 'Connection test successful',
             timestamp: serverTimestamp()
         });
-        console.log('✅ Write test successful');
+        console.log('✅ Write access successful');
         
-        // Test read
-        const snapshot = await get(testRef);
-        console.log('✅ Read test successful', snapshot.val());
-        
-        console.log('🎉 Firebase connection working perfectly!');
+        console.log('🎉 Firebase connection test passed!');
         return true;
         
     } catch (error) {
@@ -711,12 +768,35 @@ window.testFirebaseConnection = async function() {
         console.error('Error message:', error.message);
         
         if (error.code === 'PERMISSION_DENIED') {
-            console.error('🔒 Fix: Update your Firebase Security Rules to allow read/write access');
+            console.error('🔒 SOLUTION: Update your Firebase Security Rules');
+            console.error('Go to: Firebase Console → Realtime Database → Rules');
+            console.error('Set rules to: {"rules": {".read": true, ".write": true}}');
+        } else if (error.code === 'NETWORK_ERROR') {
+            console.error('🌐 SOLUTION: Check your internet connection');
+        } else {
+            console.error('❓ Unknown error - check Firebase configuration');
         }
         
         return false;
     }
 };
+
+/**
+ * Automatic connection test that runs on app start
+ */
+async function runStartupConnectionTest() {
+    console.log('🔍 Running startup connection test...');
+    
+    // Wait a moment for Firebase to fully initialize
+    setTimeout(async () => {
+        const success = await window.testFirebaseConnection();
+        if (!success) {
+            showError('Firebase connection test failed. Check browser console for details.');
+            appState.isLoading = false;
+            updateUI();
+        }
+    }, 2000);
+}
 
 // ==========================================
 // START THE APPLICATION
@@ -724,10 +804,14 @@ window.testFirebaseConnection = async function() {
 
 // Initialize the app when the DOM is fully loaded
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeApp);
+    document.addEventListener('DOMContentLoaded', () => {
+        initializeApp();
+        runStartupConnectionTest();
+    });
 } else {
     // DOM is already loaded
     initializeApp();
+    runStartupConnectionTest();
 }
 
 // ==========================================
