@@ -10,7 +10,7 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #9ca383 0%, #998da4 100%);
+    background: linear-gradient(135deg, #a3b57c 0%, #4c5885 100%);
     min-height: 100vh;
     padding: 10px;
     line-height: 1.4;
@@ -34,7 +34,7 @@ body {
    ========================================== */
 
 .header {
-    background: linear-gradient(135deg, #2d819f, #31a9b7);
+    background: linear-gradient(135deg, #466631, #5a65a8);
     color: white;
     padding: 20px;
     text-align: center;
@@ -125,15 +125,15 @@ body {
    ========================================== */
 
 .leading-place {
-    background: linear-gradient(135deg, #d8db2b, #d4b240);
-    border: 2px solid #d5580f;
+    background: linear-gradient(135deg, #a39e81, #8ac051);
+    border: 2px solid #f57c00;
     border-radius: 12px;
     padding: 15px;
     margin-bottom: 20px;
     display: flex;
     align-items: center;
     gap: 15px;
-    box-shadow: 0 6px 20px rgba(141, 130, 68, 0.3);
+    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.3);
     animation: glow 2s ease-in-out infinite alternate;
 }
 
@@ -296,6 +296,23 @@ body {
     box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
 }
 
+.vote-btn.voted.changed {
+    background: linear-gradient(135deg, #2196F3, #1976D2);
+    animation: pulse-blue 1s ease-in-out 3;
+}
+
+@keyframes pulse-blue {
+    0% {
+        box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+    }
+    50% {
+        box-shadow: 0 6px 20px rgba(33, 150, 243, 0.6);
+    }
+    100% {
+        box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+    }
+}
+
 .vote-btn.change-vote {
     background: linear-gradient(135deg, #2196F3, #1976D2);
 }
@@ -326,6 +343,25 @@ body {
     background: rgba(76, 175, 80, 0.1);
     border-radius: 10px;
     border: 1px solid rgba(76, 175, 80, 0.2);
+}
+
+.user-vote-indicator.changed {
+    color: #2196F3;
+    background: rgba(33, 150, 243, 0.1);
+    border: 1px solid rgba(33, 150, 243, 0.2);
+    animation: pulse-indicator 1s ease-in-out 3;
+}
+
+@keyframes pulse-indicator {
+    0% {
+        background: rgba(33, 150, 243, 0.1);
+    }
+    50% {
+        background: rgba(33, 150, 243, 0.2);
+    }
+    100% {
+        background: rgba(33, 150, 243, 0.1);
+    }
 }
 
 /* ==========================================

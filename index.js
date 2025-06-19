@@ -47,7 +47,8 @@ let appState = {
     votingInProgress: new Set(),  // Track which places are being voted on
     isConnected: false,           // Track Firebase connection status
     isInitialized: false,         // Track if Firebase is fully initialized
-    userVote: null                // Track which place the user has voted for
+    userVote: null,               // Track which place the user has voted for
+    justChangedVote: false        // Track if user just changed their vote
 };
 
 // ==========================================
@@ -572,11 +573,20 @@ async function handleVote(placeId) {
         // Save user's vote choice
         saveUserVote(placeId);
         
+        // Mark that user just changed their vote
+        if (isChangingVote) {
+            appState.justChangedVote = true;
+            // Reset the flag after a short delay
+            setTimeout(() => {
+                appState.justChangedVote = false;
+            }, 3000);
+        }
+        
         console.log('✅ Vote recorded successfully');
         
         // Show success feedback
         if (isChangingVote) {
-            showSuccess(`Changed your vote to: ${currentPlace.name}`);
+            showSuccess(`Changed to: ${currentPlace.name}`);
         } else {
             showSuccess(`Voted for: ${currentPlace.name}`);
         }
@@ -689,7 +699,11 @@ function createPlaceElement(placeId, placeData) {
         
         // Add user vote indicator to name if this is their choice
         if (userVote === placeId) {
-            placeName.innerHTML = `${safePlaceName} <span class="user-vote-indicator">👤 Your Choice</span>`;
+            if (appState.justChangedVote) {
+                placeName.innerHTML = `${safePlaceName} <span class="user-vote-indicator changed">👤 Changed to</span>`;
+            } else {
+                placeName.innerHTML = `${safePlaceName} <span class="user-vote-indicator">👤 Your Choice</span>`;
+            }
         }
         
         // Create and set up the vote count element
