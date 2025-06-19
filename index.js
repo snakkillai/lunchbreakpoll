@@ -785,7 +785,7 @@ function updateVoteButtonState(button, placeId) {
             button.setAttribute('aria-label', `You voted for ${appState.places[placeId]?.name || 'this place'}`);
         } else if (hasVoted) {
             // User has voted for a different place - CORRECTED TEXT
-            button.textContent = "Before Vote";
+            button.textContent = "Change Vote";
             button.className = "vote-btn change-vote";
             button.disabled = false;
             button.setAttribute('aria-label', `Change your vote to ${appState.places[placeId]?.name || 'this place'}`);
