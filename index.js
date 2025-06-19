@@ -369,8 +369,8 @@ async function handleDeletePoll() {
         saveUserVote(null);
         console.log('✅ User vote cleared');
         
-        // Delete all data from Firebase
-        await firebaseImports.update(placesRef, null);
+        // Delete all data from Firebase using set with null
+        await firebaseImports.set(placesRef, null);
         console.log('✅ Firebase data deleted');
         
         // Reset application state
@@ -478,9 +478,9 @@ async function initializeFirebase() {
     try {
         console.log('🔄 Initializing Firebase...');
         
-        // Import Firebase modules - same as debug script
+        // Import Firebase modules - including set for deletion
         const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js");
-        const { getDatabase, ref, push, onValue, get, update } = await import("https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js");
+        const { getDatabase, ref, push, onValue, get, update, set } = await import("https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js");
         
         console.log('✅ Firebase modules imported');
         
@@ -492,7 +492,8 @@ async function initializeFirebase() {
             push,
             onValue,
             get,
-            update
+            update,
+            set
         };
         
         // Initialize Firebase app - same as debug script
@@ -777,14 +778,14 @@ function updateVoteButtonState(button, placeId) {
         console.log('📊 Button state data:', { userVote, hasVoted, votedForThis, placeId });
         
         if (votedForThis) {
-            // User has voted for this place
-            button.textContent = "✓ Your Vote";
+            // User has voted for this place - CORRECTED TEXT
+            button.textContent = "Your Vote";
             button.className = "vote-btn voted";
             button.disabled = true;
             button.setAttribute('aria-label', `You voted for ${appState.places[placeId]?.name || 'this place'}`);
         } else if (hasVoted) {
-            // User has voted for a different place
-            button.textContent = "Change Vote";
+            // User has voted for a different place - CORRECTED TEXT
+            button.textContent = "Before Vote";
             button.className = "vote-btn change-vote";
             button.disabled = false;
             button.setAttribute('aria-label', `Change your vote to ${appState.places[placeId]?.name || 'this place'}`);
