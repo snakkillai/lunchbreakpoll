@@ -47,7 +47,8 @@ let appState = {
     votingInProgress: new Set(),  // Track which places are being voted on
     isConnected: false,           // Track Firebase connection status
     isInitialized: false,         // Track if Firebase is fully initialized
-    userVote: null                // Track which place the user has voted for
+    userVote: null,               // Track which place the user has voted for
+    isDeleting: false             // Track if poll deletion is in progress
 };
 
 // ==========================================
@@ -180,6 +181,22 @@ function updateUI() {
     
     // Show/hide places list
     placesList.style.display = (!appState.isLoading && hasPlaces) ? 'block' : 'none';
+    
+    // Show/hide delete poll button - only show if there are places and not loading
+    updateDeleteButtonVisibility();
+}
+
+/**
+ * Updates the visibility of the delete poll button
+ */
+function updateDeleteButtonVisibility() {
+    const hasPlaces = Object.keys(appState.places).length > 0;
+    const shouldShowDelete = !appState.isLoading && hasPlaces;
+    
+    const deletePollContainer = document.getElementById("deletePollContainer");
+    if (deletePollContainer) {
+        deletePollContainer.style.display = shouldShowDelete ? 'block' : 'none';
+    }
 }
 
 /**
@@ -252,6 +269,146 @@ function updateLeadingPlace(placesArray) {
 }
 
 // ==========================================
+// DELETE POLL FUNCTIONALITY
+// ==========================================
+
+/**
+ * Creates the delete poll button and container
+ */
+function createDeletePollButton() {
+    // Check if container already exists
+    if (document.getElementById("deletePollContainer")) {
+        return;
+    }
+    
+    // Create the container
+    const container = document.createElement("div");
+    container.id = "deletePollContainer";
+    container.className = "delete-poll-container";
+    container.style.display = "none"; // Initially hidden
+    
+    // Create the delete button
+    const deleteBtn = document.createElement("button");
+    deleteBtn.id = "deletePollBtn";
+    deleteBtn.className = "delete-poll-btn";
+    deleteBtn.textContent = "🗑️ Delete Poll";
+    deleteBtn.setAttribute('aria-label', 'Delete entire poll and reset voting');
+    
+    // Add click event listener
+    deleteBtn.addEventListener('click', confirmDeletePoll);
+    
+    // Add button to container
+    container.appendChild(deleteBtn);
+    
+    // Add container to the page (after the places list)
+    const placesList = document.getElementById("placesList");
+    if (placesList && placesList.parentNode) {
+        placesList.parentNode.insertBefore(container, placesList.nextSibling);
+    } else {
+        // Fallback: add to end of body
+        document.body.appendChild(container);
+    }
+    
+    console.log('✅ Delete poll button created');
+}
+
+/**
+ * Shows confirmation dialog before deleting the poll
+ */
+function confirmDeletePoll() {
+    // Prevent multiple delete attempts
+    if (appState.isDeleting) {
+        return;
+    }
+    
+    const placeCount = Object.keys(appState.places).length;
+    const totalVotes = Object.values(appState.places).reduce((sum, place) => sum + (place.votes || 0), 0);
+    
+    const confirmMessage = `Are you sure you want to delete the entire poll?\n\n` +
+                          `This will permanently remove:\n` +
+                          `• ${placeCount} lunch place${placeCount !== 1 ? 's' : ''}\n` +
+                          `• ${totalVotes} vote${totalVotes !== 1 ? 's' : ''}\n` +
+                          `• All voting history\n\n` +
+                          `This action cannot be undone!`;
+    
+    if (confirm(confirmMessage)) {
+        handleDeletePoll();
+    }
+}
+
+/**
+ * Handles the deletion of the entire poll
+ */
+async function handleDeletePoll() {
+    // Check if Firebase is properly initialized
+    if (!appState.isInitialized || !placesRef || !firebaseImports) {
+        showError("Firebase not initialized. Please refresh the page.");
+        return;
+    }
+    
+    // Prevent multiple delete attempts
+    if (appState.isDeleting) {
+        return;
+    }
+    
+    try {
+        // Set deleting state
+        appState.isDeleting = true;
+        
+        // Update delete button state
+        const deleteBtn = document.getElementById("deletePollBtn");
+        if (deleteBtn) {
+            deleteBtn.disabled = true;
+            deleteBtn.textContent = "🗑️ Deleting...";
+            deleteBtn.classList.add('deleting');
+        }
+        
+        console.log('🗑️ Starting poll deletion...');
+        
+        // Clear user's vote from localStorage
+        saveUserVote(null);
+        console.log('✅ User vote cleared');
+        
+        // Delete all data from Firebase
+        await firebaseImports.update(placesRef, null);
+        console.log('✅ Firebase data deleted');
+        
+        // Reset application state
+        appState.places = {};
+        appState.votingInProgress.clear();
+        appState.userVote = null;
+        
+        // Update UI to reflect empty state
+        updateUI();
+        
+        // Clear any error messages
+        hideError();
+        
+        // Show success message
+        showSuccess('Poll deleted successfully');
+        console.log('🎉 Poll deletion completed successfully');
+        
+        // Focus back on input for better UX
+        placeInput.focus();
+        
+    } catch (error) {
+        console.error("❌ Error deleting poll:", error);
+        showError("Failed to delete poll: " + error.message);
+        
+        // Reset delete button state on error
+        const deleteBtn = document.getElementById("deletePollBtn");
+        if (deleteBtn) {
+            deleteBtn.disabled = false;
+            deleteBtn.textContent = "🗑️ Delete Poll";
+            deleteBtn.classList.remove('deleting');
+        }
+    } finally {
+        // Reset deleting state
+        appState.isDeleting = false;
+    }
+}
+
+// ==========================================
 // DIAGNOSTIC FUNCTIONS
 // ==========================================
 
@@ -274,6 +431,7 @@ window.diagnoseLunchVote = function() {
         console.log('   - Is initialized:', appState.isInitialized);
         console.log('   - Is connected:', appState.isConnected);
         console.log('   - Is loading:', appState.isLoading);
+        console.log('   - Is deleting:', appState.isDeleting);
         console.log('   - Places count:', Object.keys(appState.places).length);
         console.log('   - Places data:', appState.places);
         
@@ -281,6 +439,7 @@ window.diagnoseLunchVote = function() {
         console.log('   - Places list exists:', !!placesList);
         console.log('   - Loading indicator exists:', !!loadingIndicator);
         console.log('   - Error message exists:', !!errorMessage);
+        console.log('   - Delete poll container exists:', !!document.getElementById("deletePollContainer"));
         
         console.log('5. User Vote:');
         console.log('   - Current vote:', getUserVote());
@@ -1105,6 +1264,10 @@ async function initializeApp() {
         // Set up event listeners first
         setupEventListeners();
         console.log('✅ Event listeners set up');
+        
+        // Create delete poll button
+        createDeletePollButton();
+        console.log('✅ Delete poll button created');
         
         // Initialize Firebase - same as debug script
         const firebaseSuccess = await initializeFirebase();
