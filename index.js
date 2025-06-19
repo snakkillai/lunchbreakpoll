@@ -18,16 +18,15 @@ import {
 
 // Firebase project configuration
 // This connects our app to your specific Firebase Realtime Database project
-const firebaseConfig = {
+  const firebaseConfig = {
     apiKey: "AIzaSyD7qJ3BZ3ppoA9zvT264OzOMkD9L7ls0-Q",
     authDomain: "lunchbreakpoll-c4ecc.firebaseapp.com",
     databaseURL: "https://lunchbreakpoll-c4ecc-default-rtdb.firebaseio.com",
     projectId: "lunchbreakpoll-c4ecc",
     storageBucket: "lunchbreakpoll-c4ecc.firebasestorage.app",
     messagingSenderId: "143579801004",
-    appId: "1:143579801004:web:cf8d2dbc25b12a9ae5c609"
-};
-
+    appId: "1:143579801004:web:0a776f8a2c557195e5c609"
+  };
 // ==========================================
 // FIREBASE INITIALIZATION
 // ==========================================
