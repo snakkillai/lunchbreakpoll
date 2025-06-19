@@ -2,22 +2,7 @@
 // FIREBASE CONFIGURATION AND IMPORTS
 // ==========================================
 
-// Import Firebase modules from the CDN
-// We're using Firebase v11.9.1 for the latest features and security updates
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-import { 
-    getDatabase, 
-    ref, 
-    push, 
-    onValue, 
-    update, 
-    serverTimestamp,
-    off,
-    get
-} from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
-
-// Firebase project configuration
-// This connects our app to your specific Firebase Realtime Database project
+// Firebase project configuration - same as debug script
 const firebaseConfig = {
     apiKey: "AIzaSyD7qJ3BZ3ppoA9zvT264OzOMkD9L7ls0-Q",
     authDomain: "lunchbreakpoll-c4ecc.firebaseapp.com",
@@ -28,31 +13,11 @@ const firebaseConfig = {
     appId: "1:143579801004:web:cf8d2dbc25b12a9ae5c609"
 };
 
-// ==========================================
-// FIREBASE INITIALIZATION
-// ==========================================
-
-let app, db, placesRef;
-
-try {
-    // Initialize Firebase app with our configuration
-    app = initializeApp(firebaseConfig);
-    console.log('Firebase app initialized successfully');
-
-    // Get a reference to the Realtime Database
-    // This allows us to read and write data in real-time
-    db = getDatabase(app);
-    console.log('Database reference obtained');
-
-    // Create a reference to the "lunchPlaces" node in our database
-    // This is where all lunch place data will be stored
-    placesRef = ref(db, "lunchPlaces");
-    console.log('Places reference created');
-
-} catch (error) {
-    console.error('Firebase initialization error:', error);
-    alert('Failed to connect to Firebase. Please check your internet connection and refresh the page.');
-}
+// Global variables for Firebase - same pattern as debug script
+let firebaseApp = null;
+let firebaseDb = null;
+let placesRef = null;
+let firebaseImports = null;
 
 // ==========================================
 // DOM ELEMENT REFERENCES
@@ -78,7 +43,8 @@ let appState = {
     places: {},                   // Current places data from Firebase
     isSubmitting: false,          // Whether we're currently adding a place
     votingInProgress: new Set(),  // Track which places are being voted on
-    isConnected: true             // Track Firebase connection status
+    isConnected: false,           // Track Firebase connection status
+    isInitialized: false          // Track if Firebase is fully initialized
 };
 
 // ==========================================
@@ -113,7 +79,6 @@ function hideError() {
  */
 function showSuccess(message) {
     console.log('LunchVote Success:', message);
-    // You could add a success message UI element here if desired
 }
 
 /**
@@ -189,12 +154,81 @@ function updateUI() {
 }
 
 // ==========================================
-// ADDING NEW LUNCH PLACES
+// FIREBASE INITIALIZATION - Using Debug Script Pattern
+// ==========================================
+
+/**
+ * Initialize Firebase using the same pattern as the debug script
+ */
+async function initializeFirebase() {
+    try {
+        console.log('🔄 Initializing Firebase...');
+        
+        // Import Firebase modules - same as debug script
+        const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js");
+        const { getDatabase, ref, push, onValue, get, update } = await import("https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js");
+        
+        console.log('✅ Firebase modules imported');
+        
+        // Store imports globally - same as debug script
+        firebaseImports = {
+            initializeApp,
+            getDatabase,
+            ref,
+            push,
+            onValue,
+            get,
+            update
+        };
+        
+        // Initialize Firebase app - same as debug script
+        firebaseApp = firebaseImports.initializeApp(firebaseConfig);
+        console.log('✅ Firebase app initialized');
+        
+        // Get database reference - same as debug script
+        firebaseDb = firebaseImports.getDatabase(firebaseApp);
+        console.log('✅ Database reference obtained');
+        
+        // Create places reference - same as debug script
+        placesRef = firebaseImports.ref(firebaseDb, "lunchPlaces");
+        console.log('✅ Places reference created');
+        
+        // Test connection - same as debug script
+        const snapshot = await firebaseImports.get(placesRef);
+        console.log('✅ Database connection test successful');
+        console.log('📊 Existing data:', snapshot.val());
+        
+        // Mark as initialized
+        appState.isInitialized = true;
+        appState.isConnected = true;
+        
+        console.log('🎉 Firebase initialization complete!');
+        return true;
+        
+    } catch (error) {
+        console.error('❌ Firebase initialization failed:', error);
+        console.error('Error code:', error.code);
+        console.error('Error message:', error.message);
+        
+        if (error.code === 'PERMISSION_DENIED') {
+            showError('❌ Permission denied! Please check your Firebase security rules.');
+        } else {
+            showError('❌ Failed to connect to Firebase: ' + error.message);
+        }
+        
+        appState.isInitialized = false;
+        appState.isConnected = false;
+        return false;
+    }
+}
+
+// ==========================================
+// ADDING NEW LUNCH PLACES - Using Debug Script Pattern
 // ==========================================
 
 /**
  * Handles the form submission for adding new lunch places
- * This function is called when the user clicks "Add Place" or presses Enter
+ * Using the same pattern as the debug script
  */
 async function handleAddPlace(e) {
     // Prevent the default form submission behavior (page reload)
@@ -203,13 +237,10 @@ async function handleAddPlace(e) {
     console.log('🍽️ Starting add place process...');
     
     // Check if Firebase is properly initialized
-    if (!placesRef) {
-        console.error('❌ Places reference not available');
-        showError("Database connection not available. Please refresh the page.");
+    if (!appState.isInitialized || !placesRef || !firebaseImports) {
+        showError("Firebase not initialized. Please refresh the page.");
         return;
     }
-    
-    console.log('✅ Firebase references OK');
     
     // Get the place name from the input field and remove extra whitespace
     const placeName = placeInput.value.trim();
@@ -217,138 +248,80 @@ async function handleAddPlace(e) {
     
     // Validate the input before proceeding
     if (!validatePlaceName(placeName)) {
-        console.log('❌ Validation failed');
-        return; // Exit if validation fails
+        return;
     }
-    
-    console.log('✅ Validation passed');
     
     // Check if place already exists
     if (doesPlaceExist(placeName)) {
-        console.log('❌ Place already exists');
         showError("This lunch place already exists!");
         placeInput.focus();
         return;
     }
     
-    console.log('✅ Place name is unique');
-    
     // Prevent multiple submissions
     if (appState.isSubmitting) {
-        console.log('⏳ Already submitting, ignoring request');
         return;
     }
     
     try {
         // Update state to prevent double submissions
         appState.isSubmitting = true;
-        console.log('🔄 Setting submitting state');
         
         // Update UI to show loading state
         addBtn.disabled = true;
         addBtn.textContent = "Adding...";
-        console.log('🔄 UI updated to loading state');
         
         // Hide any previous errors
         hideError();
         
-        console.log('🚀 Attempting to add place:', placeName);
-        console.log('📍 Database path:', placesRef.toString());
+        console.log('🚀 Adding place:', placeName);
         
-        // Create a new lunch place object
+        // Create a new lunch place object - same as debug script
         const newPlace = {
             name: sanitizeInput(placeName),     // Sanitized place name
             votes: 0,                           // Start with zero votes
-            createdAt: serverTimestamp(),       // Firebase server timestamp
+            createdAt: Date.now(),              // Current timestamp
             lastVoted: null                     // Track when last vote was cast
         };
         
-        console.log('📦 New place object created:', newPlace);
-        console.log('🔗 Database reference:', db);
-        console.log('📍 Places reference:', placesRef);
+        console.log('📦 New place object:', newPlace);
         
-        // Test write permissions first
-        console.log('🧪 Testing write permissions...');
+        // Push the new place to Firebase - same as debug script
+        const result = await firebaseImports.push(placesRef, newPlace);
         
-        // Push the new place to Firebase Realtime Database
-        // The push() function automatically generates a unique key for each place
-        console.log('📤 Calling push() function...');
-        const result = await push(placesRef, newPlace);
-        
-        console.log('🎉 Push successful! Result:', result);
-        console.log('🆔 New place ID:', result.key);
+        console.log('🎉 Place added successfully with ID:', result.key);
         
         // Clear the input field after successful submission
         placeInput.value = "";
-        console.log('🧹 Input field cleared');
         
         // Show success feedback
         showSuccess(`Successfully added: ${placeName}`);
-        console.log('✅ Success message shown');
         
         // Focus back on input for better UX
         placeInput.focus();
         
-        console.log('🎯 Process completed successfully');
-        
     } catch (error) {
         // Handle any errors that occur during the database operation
-        console.error("💥 ERROR ADDING PLACE:");
-        console.error("Error object:", error);
-        console.error("Error name:", error.name);
-        console.error("Error message:", error.message);
+        console.error("💥 Error adding place:", error);
         console.error("Error code:", error.code);
-        console.error("Error stack:", error.stack);
+        console.error("Error message:", error.message);
         
-        // Log Firebase-specific error details
-        if (error.code) {
-            console.error("🔥 Firebase error code:", error.code);
-            
-            switch (error.code) {
-                case 'PERMISSION_DENIED':
-                    console.error("🔒 PERMISSION DENIED - Your Firebase security rules are blocking writes");
-                    console.error("🛠️ SOLUTION: Go to Firebase Console → Realtime Database → Rules");
-                    console.error("📝 Set rules to: {\"rules\": {\".read\": true, \".write\": true}}");
-                    showError("❌ Permission denied! Please update your Firebase security rules to allow write access.");
-                    break;
-                    
-                case 'NETWORK_ERROR':
-                    console.error("🌐 Network error - check internet connection");
-                    showError("Network error. Please check your internet connection and try again.");
-                    break;
-                    
-                case 'INVALID_ARGUMENT':
-                    console.error("📝 Invalid data format");
-                    showError("Invalid data format. Please try again.");
-                    break;
-                    
-                default:
-                    console.error("❓ Unknown Firebase error");
-                    showError("Failed to add place. Error: " + error.message);
-            }
+        if (error.code === 'PERMISSION_DENIED') {
+            showError("❌ Permission denied! Please check your Firebase security rules.");
         } else {
-            console.error("❓ Non-Firebase error");
-            showError("Failed to add place. Please try again! Error: " + error.message);
+            showError("Failed to add place: " + error.message);
         }
-        
-        // Log current app state for debugging
-        console.error("📊 Current app state:", appState);
-        console.error("🔗 Firebase app:", app);
-        console.error("💾 Database reference:", db);
-        console.error("📍 Places reference:", placesRef);
         
     } finally {
         // Reset the submit button state regardless of success or failure
-        console.log('🔄 Resetting button state');
         appState.isSubmitting = false;
         addBtn.disabled = false;
         addBtn.textContent = "Add Place";
-        console.log('✅ Button state reset complete');
     }
 }
 
 // ==========================================
-// VOTING FUNCTIONALITY
+// VOTING FUNCTIONALITY - Using Debug Script Pattern
 // ==========================================
 
 /**
@@ -357,8 +330,8 @@ async function handleAddPlace(e) {
  */
 async function handleVote(placeId) {
     // Check if Firebase is properly initialized
-    if (!placesRef) {
-        showError("Database connection not available. Please refresh the page.");
+    if (!appState.isInitialized || !placesRef || !firebaseImports) {
+        showError("Firebase not initialized. Please refresh the page.");
         return;
     }
     
@@ -385,13 +358,13 @@ async function handleVote(placeId) {
             voteBtn.classList.add('voting');
         }
         
-        console.log('Attempting to vote for place:', placeId);
+        console.log('🗳️ Voting for place:', placeId);
         
         // Get reference to the specific place in the database
-        const placeRef = ref(db, `lunchPlaces/${placeId}`);
+        const placeRef = firebaseImports.ref(firebaseDb, `lunchPlaces/${placeId}`);
         
-        // Get the current data for this place to ensure we have the latest vote count
-        const snapshot = await get(placeRef);
+        // Get the current data for this place - same as debug script
+        const snapshot = await firebaseImports.get(placeRef);
         
         if (!snapshot.exists()) {
             throw new Error("Place no longer exists");
@@ -400,40 +373,24 @@ async function handleVote(placeId) {
         const currentPlace = snapshot.val();
         const currentVotes = currentPlace.votes || 0;
         
-        console.log('Current votes for place:', currentVotes);
-        
         // Prepare the update object
         const updates = {
             votes: currentVotes + 1,           // Increment vote count
-            lastVoted: serverTimestamp()       // Update last voted timestamp
+            lastVoted: Date.now()              // Update last voted timestamp
         };
         
-        console.log('Updating with:', updates);
+        // Update the vote count in Firebase - same as debug script
+        await firebaseImports.update(placeRef, updates);
         
-        // Update the vote count in Firebase
-        await update(placeRef, updates);
-        
-        console.log('Vote recorded successfully');
+        console.log('✅ Vote recorded successfully');
         
         // Show success feedback
         showSuccess(`Voted for: ${currentPlace.name}`);
         
     } catch (error) {
         // Handle any errors that occur during voting
-        console.error("Error voting:", error);
-        console.error("Error details:", {
-            code: error.code,
-            message: error.message,
-            stack: error.stack
-        });
-        
-        if (error.code === 'PERMISSION_DENIED') {
-            showError("Permission denied. Please check your Firebase security rules.");
-        } else if (error.code === 'NETWORK_ERROR') {
-            showError("Network error. Please check your internet connection and try again.");
-        } else {
-            showError("Failed to record your vote. Please try again! Error: " + error.message);
-        }
+        console.error("❌ Error voting:", error);
+        showError("Failed to record your vote: " + error.message);
         
         // Reset button state on error
         const voteBtn = document.querySelector(`[data-id="${placeId}"]`);
@@ -510,11 +467,10 @@ function createPlaceElement(placeId, placeData) {
 
 /**
  * Renders the complete list of places
- * This function is called whenever the data changes in Firebase
  * @param {Object} placesData - The places data from Firebase
  */
 function renderPlaces(placesData) {
-    console.log('Rendering places:', placesData);
+    console.log('🔄 Rendering places:', placesData);
     
     // Clear the existing list
     placesList.innerHTML = "";
@@ -528,7 +484,7 @@ function renderPlaces(placesData) {
     
     // If no places exist, we're done (empty state will be shown)
     if (!placesData) {
-        console.log('No places to display');
+        console.log('📭 No places to display');
         return;
     }
     
@@ -537,8 +493,6 @@ function renderPlaces(placesData) {
         id,
         ...data
     }));
-    
-    console.log('Places array:', placesArray);
     
     // Sort places by vote count (highest first), then by creation time (newest first)
     placesArray.sort((a, b) => {
@@ -556,97 +510,102 @@ function renderPlaces(placesData) {
         placesList.appendChild(placeElement);
     });
     
-    console.log('Rendered', placesArray.length, 'places');
+    console.log('✅ Rendered', placesArray.length, 'places');
 }
 
 // ==========================================
-// REAL-TIME DATABASE LISTENER
+// REAL-TIME DATABASE LISTENER - Using Debug Script Pattern
 // ==========================================
 
 /**
  * Sets up the real-time listener for database changes
- * This function will be called whenever data in Firebase changes
  */
 function setupRealtimeListener() {
-    if (!placesRef) {
-        console.error('Places reference not available');
-        showError('Database connection not available. Please refresh the page.');
-        appState.isLoading = false;
-        updateUI();
+    if (!appState.isInitialized || !placesRef || !firebaseImports) {
+        console.error('❌ Firebase not initialized for listener');
         return;
     }
     
-    console.log('Setting up real-time listener...');
-    console.log('Database URL:', firebaseConfig.databaseURL);
-    console.log('Places reference path:', placesRef.toString());
+    console.log('🔄 Setting up real-time listener...');
     
-    // Set a timeout to catch if the listener never responds
-    const timeoutId = setTimeout(() => {
-        console.error('Database listener timeout - no response after 10 seconds');
-        showError('Database connection timeout. Please check your Firebase configuration and try refreshing the page.');
-        appState.isLoading = false;
-        updateUI();
-    }, 10000);
-    
-    // Listen for changes to the lunchPlaces node in Firebase
-    // onValue() sets up a real-time listener that fires whenever data changes
-    onValue(placesRef, (snapshot) => {
+    // Listen for changes to the lunchPlaces node in Firebase - same as debug script
+    firebaseImports.onValue(placesRef, (snapshot) => {
         try {
-            // Clear the timeout since we got a response
-            clearTimeout(timeoutId);
-            
-            console.log('✅ Database snapshot received successfully');
-            console.log('Snapshot exists:', snapshot.exists());
+            console.log('✅ Database snapshot received');
             
             // Get the data from the snapshot
             const data = snapshot.val();
-            
-            console.log('Raw snapshot data:', data);
-            console.log('Data type:', typeof data);
+            console.log('📊 Snapshot data:', data);
             
             // Update connection status
             appState.isConnected = true;
             
-            // Always call renderPlaces, even with null data (shows empty state)
+            // Render the places with the new data
             renderPlaces(data);
             
             const placeCount = data ? Object.keys(data).length : 0;
             console.log('✅ Successfully loaded', placeCount, 'lunch places');
             
-            if (placeCount === 0) {
-                console.log('No lunch places found - showing empty state');
-            }
-            
         } catch (error) {
-            // Clear timeout and handle processing errors
-            clearTimeout(timeoutId);
             console.error("❌ Error processing places data:", error);
-            showError("Failed to process lunch places data. Please refresh the page.");
+            showError("Failed to process lunch places data.");
             appState.isLoading = false;
             updateUI();
         }
     }, (error) => {
-        // Clear timeout and handle connection errors
-        clearTimeout(timeoutId);
-        console.error("❌ Database connection error:", error);
-        console.error("Error code:", error.code);
-        console.error("Error message:", error.message);
-        
+        console.error("❌ Database listener error:", error);
         appState.isConnected = false;
         appState.isLoading = false;
         
         if (error.code === 'PERMISSION_DENIED') {
-            showError("❌ Permission denied! Please update your Firebase security rules to allow read access.");
-            console.error("🔧 Fix: Go to Firebase Console → Realtime Database → Rules and set read permissions");
-        } else if (error.code === 'NETWORK_ERROR') {
-            showError("❌ Network error. Please check your internet connection.");
+            showError("❌ Permission denied! Please check your Firebase security rules.");
         } else {
-            showError(`❌ Database error: ${error.message}. Please refresh the page.`);
+            showError("❌ Database connection error: " + error.message);
         }
         
         updateUI();
     });
 }
+
+// ==========================================
+// CONNECTION TEST - Same as Debug Script
+// ==========================================
+
+/**
+ * Test Firebase connection - same as debug script
+ */
+window.testFirebaseConnection = async function() {
+    try {
+        if (!appState.isInitialized || !placesRef || !firebaseImports) {
+            console.log('❌ Firebase not initialized');
+            return false;
+        }
+
+        console.log('🧪 Testing Firebase connection...');
+        
+        // Test read
+        const snapshot = await firebaseImports.get(placesRef);
+        console.log('✅ Read test successful');
+        console.log('📊 Current data:', snapshot.val());
+        
+        // Test write
+        const testData = {
+            name: "Connection Test " + Date.now(),
+            votes: 0,
+            createdAt: Date.now()
+        };
+        
+        const result = await firebaseImports.push(placesRef, testData);
+        console.log('✅ Write test successful, ID:', result.key);
+        
+        console.log('🎉 Firebase connection test passed!');
+        return true;
+        
+    } catch (error) {
+        console.error('❌ Firebase connection test failed:', error);
+        return false;
+    }
+};
 
 // ==========================================
 // EVENT LISTENERS
@@ -660,19 +619,21 @@ function setupEventListeners() {
     placeForm.addEventListener("submit", handleAddPlace);
     
     // Test button for Firebase debugging
-    testBtn.addEventListener("click", async () => {
-        testBtn.disabled = true;
-        testBtn.textContent = "🧪 Testing...";
-        
-        const success = await window.testFirebaseConnection();
-        
-        testBtn.disabled = false;
-        testBtn.textContent = success ? "✅ Test Passed!" : "❌ Test Failed!";
-        
-        setTimeout(() => {
-            testBtn.textContent = "🧪 Test Firebase Connection";
-        }, 3000);
-    });
+    if (testBtn) {
+        testBtn.addEventListener("click", async () => {
+            testBtn.disabled = true;
+            testBtn.textContent = "🧪 Testing...";
+            
+            const success = await window.testFirebaseConnection();
+            
+            testBtn.disabled = false;
+            testBtn.textContent = success ? "✅ Test Passed!" : "❌ Test Failed!";
+            
+            setTimeout(() => {
+                testBtn.textContent = "🧪 Test Firebase Connection";
+            }, 3000);
+        });
+    }
     
     // Input field enhancements
     placeInput.addEventListener('input', () => {
@@ -682,71 +643,41 @@ function setupEventListeners() {
         }
     });
     
-    // Handle Enter key in input field (already handled by form submit, but good for clarity)
-    placeInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !appState.isSubmitting) {
-            handleAddPlace(e);
-        }
-    });
-    
-    // Handle page visibility changes to manage database connections
-    document.addEventListener('visibilitychange', () => {
-        if (document.hidden) {
-            console.log('Page hidden - maintaining database connection');
-        } else {
-            console.log('Page visible - ensuring database connection');
-        }
-    });
-    
     // Handle online/offline status
     window.addEventListener('online', () => {
-        console.log('Connection restored');
+        console.log('🌐 Connection restored');
         appState.isConnected = true;
         hideError();
     });
     
     window.addEventListener('offline', () => {
-        console.log('Connection lost');
+        console.log('📴 Connection lost');
         appState.isConnected = false;
         showError('You are offline. Changes will be saved when connection is restored.');
     });
 }
 
 // ==========================================
-// APPLICATION INITIALIZATION
+// APPLICATION INITIALIZATION - Using Debug Script Pattern
 // ==========================================
 
 /**
  * Initializes the LunchVote application
- * This function is called when the page loads
  */
-function initializeApp() {
+async function initializeApp() {
     try {
         console.log('🚀 Initializing LunchVote app...');
-        console.log('Firebase config:', firebaseConfig);
         
-        // Verify Firebase initialization
-        if (!app) {
-            throw new Error('Firebase app not initialized');
-        }
-        console.log('✅ Firebase app initialized');
-        
-        if (!db) {
-            throw new Error('Firebase database not initialized');
-        }
-        console.log('✅ Firebase database initialized');
-        
-        if (!placesRef) {
-            throw new Error('Places reference not initialized');
-        }
-        console.log('✅ Places reference initialized');
-        
-        // Test basic connectivity
-        console.log('🔗 Testing Firebase connectivity...');
-        
-        // Set up event listeners
+        // Set up event listeners first
         setupEventListeners();
         console.log('✅ Event listeners set up');
+        
+        // Initialize Firebase - same as debug script
+        const firebaseSuccess = await initializeFirebase();
+        
+        if (!firebaseSuccess) {
+            throw new Error('Firebase initialization failed');
+        }
         
         // Set up real-time database listener
         setupRealtimeListener();
@@ -755,144 +686,24 @@ function initializeApp() {
         // Focus on the input field for better UX
         placeInput.focus();
         
-        console.log('🎉 LunchVote app initialization complete!');
+        console.log('🎉 LunchVote app initialized successfully!');
         
     } catch (error) {
         console.error('❌ Failed to initialize app:', error);
-        console.error('Error details:', {
-            name: error.name,
-            message: error.message,
-            stack: error.stack
-        });
-        
-        showError('Failed to initialize the app. Please check the console for details and refresh the page.');
+        showError('Failed to initialize the app. Please refresh the page.');
         appState.isLoading = false;
         updateUI();
     }
 }
 
 // ==========================================
-// CLEANUP AND ERROR HANDLING
-// ==========================================
-
-/**
- * Cleanup function to properly disconnect from Firebase when page unloads
- */
-function cleanup() {
-    try {
-        // Remove the database listener to prevent memory leaks
-        if (placesRef) {
-            off(placesRef);
-            console.log('Cleaned up database listeners');
-        }
-    } catch (error) {
-        console.error('Error during cleanup:', error);
-    }
-}
-
-// Set up cleanup when page unloads
-window.addEventListener('beforeunload', cleanup);
-
-// Handle unhandled promise rejections
-window.addEventListener('unhandledrejection', (event) => {
-    console.error('Unhandled promise rejection:', event.reason);
-    showError('An unexpected error occurred. Please try again.');
-    event.preventDefault();
-});
-
-// Handle general errors
-window.addEventListener('error', (event) => {
-    console.error('Global error:', event.error);
-    showError('An unexpected error occurred. Please refresh the page.');
-});
-
-// ==========================================
-// DATABASE CONNECTION TEST (FOR DEBUGGING)
-// ==========================================
-
-/**
- * Test function to verify Firebase connection and permissions
- * This runs automatically on app start and can be called manually
- */
-window.testFirebaseConnection = async function() {
-    try {
-        console.log('🧪 Testing Firebase connection...');
-        console.log('Database URL:', firebaseConfig.databaseURL);
-        
-        // Test basic read access to the places node
-        console.log('Testing read access to lunchPlaces...');
-        const snapshot = await get(placesRef);
-        console.log('✅ Read access successful');
-        console.log('Current data:', snapshot.val());
-        
-        // Test write access with a simple test entry
-        console.log('Testing write access...');
-        const testRef = ref(db, 'connectionTest');
-        await push(testRef, {
-            message: 'Connection test successful',
-            timestamp: serverTimestamp()
-        });
-        console.log('✅ Write access successful');
-        
-        console.log('🎉 Firebase connection test passed!');
-        return true;
-        
-    } catch (error) {
-        console.error('❌ Firebase connection test failed:', error);
-        console.error('Error code:', error.code);
-        console.error('Error message:', error.message);
-        
-        if (error.code === 'PERMISSION_DENIED') {
-            console.error('🔒 SOLUTION: Update your Firebase Security Rules');
-            console.error('Go to: Firebase Console → Realtime Database → Rules');
-            console.error('Set rules to: {"rules": {".read": true, ".write": true}}');
-        } else if (error.code === 'NETWORK_ERROR') {
-            console.error('🌐 SOLUTION: Check your internet connection');
-        } else {
-            console.error('❓ Unknown error - check Firebase configuration');
-        }
-        
-        return false;
-    }
-};
-
-/**
- * Automatic connection test that runs on app start
- */
-async function runStartupConnectionTest() {
-    console.log('🔍 Running startup connection test...');
-    
-    // Wait a moment for Firebase to fully initialize
-    setTimeout(async () => {
-        const success = await window.testFirebaseConnection();
-        if (!success) {
-            showError('Firebase connection test failed. Check browser console for details.');
-            appState.isLoading = false;
-            updateUI();
-        }
-    }, 2000);
-}
-
-// ==========================================
-// START THE APPLICATION
+// START THE APPLICATION - Same as Debug Script
 // ==========================================
 
 // Initialize the app when the DOM is fully loaded
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        initializeApp();
-        runStartupConnectionTest();
-    });
+    document.addEventListener('DOMContentLoaded', initializeApp);
 } else {
     // DOM is already loaded
     initializeApp();
-    runStartupConnectionTest();
 }
-
-// ==========================================
-// EXPORT FOR TESTING (OPTIONAL)
-// ==========================================
-
-// Export functions for testing purposes (if needed)
-// Uncomment the following lines if you want to test individual functions
-// window.LunchV
