@@ -1,85 +1,444 @@
-body {
-  font-family: 'Segoe UI', sans-serif;
-  background: linear-gradient(to right, #d17c8a, #786eb3);
-  color: #fff;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  min-height: 100vh;
+/* ==========================================
+   RESET AND BASE STYLES
+   ========================================== */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+    line-height: 1.6;
+}
+
+/* ==========================================
+   CONTAINER AND LAYOUT
+   ========================================== */
 
 .container {
-  margin-top: 60px;
-  background: #fff;
-  color: #940f80;
-  padding: 30px;
-  border-radius: 20px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-  width: 100%;
-  max-width: 500px;
-  text-align: center;
+    max-width: 800px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    overflow: hidden;
 }
 
-h1 {
-  margin-bottom: 20px;
+/* ==========================================
+   HEADER SECTION
+   ========================================== */
+
+.header {
+    background: linear-gradient(135deg, #ff6b6b, #ffa500);
+    color: white;
+    padding: 30px;
+    text-align: center;
 }
 
-form {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
+.header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    font-weight: 700;
 }
 
-input[type="text"] {
-  flex: 1;
-  padding: 10px;
-  font-size: 1rem;
-  border: 2px solid #e1c8d3;
-  border-radius: 8px;
+.header p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    font-weight: 400;
 }
 
-button {
-  padding: 10px 15px;
-  background-color: #02072c;
-  border: none;
-  border-radius: 8px;
-  color: white;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background 0.3s ease;
+/* ==========================================
+   ADD PLACE SECTION
+   ========================================== */
+
+.add-place-section {
+    padding: 30px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
 }
 
-button:hover {
-  background-color: #e0466f;
+.form-group {
+    display: flex;
+    gap: 10px;
+    max-width: 500px;
+    margin: 0 auto;
 }
 
-ul {
-  list-style: none;
-  padding: 0;
+.place-input {
+    flex: 1;
+    padding: 15px 20px;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: white;
 }
 
-li {
-  background-color: #ffe5ec;
-  color: #333;
-  padding: 12px 15px;
-  margin: 10px 0;
-  border-radius: 10px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.place-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.place-input::placeholder {
+    color: #a0aec0;
+}
+
+.add-btn {
+    padding: 15px 25px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    min-width: 120px;
+}
+
+.add-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
+
+.add-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.add-btn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+/* ==========================================
+   PLACES LIST SECTION
+   ========================================== */
+
+.places-section {
+    padding: 30px;
+}
+
+.section-title {
+    font-size: 1.5rem;
+    color: #2d3748;
+    margin-bottom: 20px;
+    text-align: center;
+    font-weight: 600;
+}
+
+.places-list {
+    list-style: none;
+    display: grid;
+    gap: 15px;
+}
+
+.place-item {
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 15px;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.place-item:hover {
+    border-color: #667eea;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+.place-info {
+    flex: 1;
+    margin-right: 15px;
+}
+
+.place-name {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 5px;
+    word-break: break-word;
+}
+
+.vote-count {
+    color: #718096;
+    font-size: 0.9rem;
+    font-weight: 400;
+}
+
+.vote-count strong {
+    color: #667eea;
+    font-size: 1.1rem;
+    font-weight: 700;
 }
 
 .vote-btn {
-  background-color: #bcb5b7;
-  border: none;
-  color: white;
-  padding: 5px 10px;
-  border-radius: 6px;
-  cursor: pointer;
+    background: linear-gradient(135deg, #ff6b6b, #ffa500);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 25px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 80px;
+    white-space: nowrap;
 }
 
 .vote-btn:hover {
-  background-color: #2582a4;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(255, 107, 107, 0.3);
+}
+
+.vote-btn:active {
+    transform: translateY(0);
+}
+
+.vote-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ==========================================
+   STATE MESSAGES
+   ========================================== */
+
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: #667eea;
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.error {
+    background: #fed7d7;
+    color: #c53030;
+    padding: 15px;
+    border-radius: 10px;
+    margin: 20px 0;
+    text-align: center;
+    font-weight: 500;
+    border: 1px solid #feb2b2;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #718096;
+}
+
+.empty-state h3 {
+    font-size: 1.3rem;
+    margin-bottom: 10px;
+    color: #4a5568;
+    font-weight: 600;
+}
+
+.empty-state p {
+    font-size: 1rem;
+    font-weight: 400;
+}
+
+/* ==========================================
+   ANIMATIONS
+   ========================================== */
+
+/* Animation for new items appearing */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.place-item {
+    animation: slideIn 0.3s ease;
+}
+
+/* Pulse animation for voting feedback */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.vote-btn.voting {
+    animation: pulse 0.3s ease;
+}
+
+/* Loading spinner animation */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading::after {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #667eea;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spin 1s linear infinite;
+    margin-left: 10px;
+    vertical-align: middle;
+}
+
+/* ==========================================
+   RESPONSIVE DESIGN
+   ========================================== */
+
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+    
+    .container {
+        border-radius: 15px;
+    }
+    
+    .header {
+        padding: 25px 20px;
+    }
+    
+    .header h1 {
+        font-size: 2rem;
+    }
+    
+    .header p {
+        font-size: 1rem;
+    }
+    
+    .add-place-section {
+        padding: 25px 20px;
+    }
+    
+    .places-section {
+        padding: 25px 20px;
+    }
+}
+
+@media (max-width: 600px) {
+    .form-group {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .add-btn {
+        width: 100%;
+        min-width: auto;
+    }
+    
+    .place-item {
+        flex-direction: column;
+        text-align: center;
+        gap: 15px;
+        padding: 20px 15px;
+    }
+    
+    .place-info {
+        margin-right: 0;
+        margin-bottom: 10px;
+    }
+    
+    .vote-btn {
+        width: 100%;
+        min-width: auto;
+        padding: 15px 24px;
+    }
+    
+    .section-title {
+        font-size: 1.3rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .header h1 {
+        font-size: 1.8rem;
+    }
+    
+    .place-name {
+        font-size: 1.1rem;
+    }
+    
+    .vote-count {
+        font-size: 0.85rem;
+    }
+    
+    .vote-count strong {
+        font-size: 1rem;
+    }
+}
+
+/* ==========================================
+   ACCESSIBILITY IMPROVEMENTS
+   ========================================== */
+
+/* Focus styles for better keyboard navigation */
+.place-input:focus,
+.add-btn:focus,
+.vote-btn:focus {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+}
+
+/* Reduced motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    
+    .place-item:hover {
+        transform: none;
+    }
+    
+    .add-btn:hover:not(:disabled),
+    .vote-btn:hover {
+        transform: none;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .container {
+        border: 2px solid #000;
+    }
+    
+    .place-item {
+        border-color: #000;
+    }
+    
+    .place-input {
+        border-color: #000;
+    }
 }

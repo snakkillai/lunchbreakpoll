@@ -1,22 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>LunchVote</title>
-  <link rel="stylesheet" href="index.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LunchVote - Vote for Your Favorite Lunch Spot</title>
+    <!-- Link to external CSS file -->
+    <link rel="stylesheet" href="index.css">
 </head>
 <body>
-  <div class="container">
-    <h1>🍽️ LunchVote</h1>
-    <form id="placeForm">
-      <input type="text" id="placeInput" placeholder="Add a lunch place..." required />
-      <button type="submit">➕</button>
-    </form>
-    <ul id="placesList"></ul>
-  </div>
+    <div class="container">
+        <!-- Header Section -->
+        <div class="header">
+            <h1>🍽️ LunchVote</h1>
+            <p>Vote for your favorite lunch spot and see real-time results!</p>
+        </div>
 
-  <!-- Firebase SDK -->
-  <script type="module" src="index.js"></script>
+        <!-- Add New Place Section -->
+        <div class="add-place-section">
+            <form id="placeForm" class="form-group">
+                <input 
+                    type="text" 
+                    id="placeInput" 
+                    class="place-input" 
+                    placeholder="Enter a lunch place name..." 
+                    required
+                    maxlength="50"
+                >
+                <button type="submit" class="add-btn" id="addBtn">
+                    Add Place
+                </button>
+            </form>
+        </div>
+
+        <!-- Places List Section -->
+        <div class="places-section">
+            <h2 class="section-title">Vote for Your Favorite!</h2>
+            <div id="loadingIndicator" class="loading">
+                Loading lunch places...
+            </div>
+            <div id="errorMessage" class="error" style="display: none;"></div>
+            <ul id="placesList" class="places-list"></ul>
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <h3>🍴 No lunch places yet!</h3>
+                <p>Be the first to add a delicious lunch spot above.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Link to external JavaScript file -->
+    <!-- Using type="module" to enable ES6 imports -->
+    <script type="module" src="index.js"></script>
 </body>
 </html>
