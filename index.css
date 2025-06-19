@@ -10,7 +10,7 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #a3b57c 0%, #4c5885 100%);
+    background: linear-gradient(135deg, #aab583 0%, #4b91a2 100%);
     min-height: 100vh;
     padding: 10px;
     line-height: 1.4;
@@ -34,7 +34,7 @@ body {
    ========================================== */
 
 .header {
-    background: linear-gradient(135deg, #466631, #5a65a8);
+    background: linear-gradient(135deg, #c36718, #e1a12a);
     color: white;
     padding: 20px;
     text-align: center;
@@ -125,7 +125,7 @@ body {
    ========================================== */
 
 .leading-place {
-    background: linear-gradient(135deg, #a39e81, #8ac051);
+    background: linear-gradient(135deg, #ffd700, #ffed4e);
     border: 2px solid #f57c00;
     border-radius: 12px;
     padding: 15px;
@@ -296,9 +296,20 @@ body {
     box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
 }
 
-.vote-btn.voted.changed {
+.vote-btn.voted.current {
     background: linear-gradient(135deg, #2196F3, #1976D2);
     animation: pulse-blue 1s ease-in-out 3;
+}
+
+.vote-btn.previous {
+    background: linear-gradient(135deg, #FF9800, #F57C00);
+    cursor: default;
+    opacity: 0.8;
+}
+
+.vote-btn.previous:hover {
+    transform: none;
+    box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
 }
 
 @keyframes pulse-blue {
@@ -345,11 +356,18 @@ body {
     border: 1px solid rgba(76, 175, 80, 0.2);
 }
 
-.user-vote-indicator.changed {
+.user-vote-indicator.current {
     color: #2196F3;
     background: rgba(33, 150, 243, 0.1);
     border: 1px solid rgba(33, 150, 243, 0.2);
     animation: pulse-indicator 1s ease-in-out 3;
+}
+
+.user-vote-indicator.previous {
+    color: #FF9800;
+    background: rgba(255, 152, 0, 0.1);
+    border: 1px solid rgba(255, 152, 0, 0.2);
+    opacity: 0.8;
 }
 
 @keyframes pulse-indicator {

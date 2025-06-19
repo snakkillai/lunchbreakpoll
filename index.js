@@ -48,6 +48,7 @@ let appState = {
     isConnected: false,           // Track Firebase connection status
     isInitialized: false,         // Track if Firebase is fully initialized
     userVote: null,               // Track which place the user has voted for
+    previousVote: null,           // Track the user's previous vote (when changed)
     justChangedVote: false        // Track if user just changed their vote
 };
 
@@ -532,6 +533,9 @@ async function handleVote(placeId) {
         if (isChangingVote && appState.places[currentUserVote]) {
             console.log('📉 Removing vote from previous place:', currentUserVote);
             
+            // Store the previous vote for display purposes
+            appState.previousVote = currentUserVote;
+            
             const oldPlaceRef = firebaseImports.ref(firebaseDb, `lunchPlaces/${currentUserVote}`);
             const oldSnapshot = await firebaseImports.get(oldPlaceRef);
             
@@ -576,10 +580,11 @@ async function handleVote(placeId) {
         // Mark that user just changed their vote
         if (isChangingVote) {
             appState.justChangedVote = true;
-            // Reset the flag after a short delay
+            // Reset the flag after 5 seconds
             setTimeout(() => {
                 appState.justChangedVote = false;
-            }, 3000);
+                appState.previousVote = null; // Clear previous vote reference
+            }, 5000);
         }
         
         console.log('✅ Vote recorded successfully');
@@ -698,12 +703,16 @@ function createPlaceElement(placeId, placeData) {
         placeName.textContent = safePlaceName;
         
         // Add user vote indicator to name if this is their choice
+        const userVote = getUserVote();
         if (userVote === placeId) {
             if (appState.justChangedVote) {
-                placeName.innerHTML = `${safePlaceName} <span class="user-vote-indicator changed">👤 Changed to</span>`;
+                placeName.innerHTML = `${safePlaceName} <span class="user-vote-indicator current">👤 Current Vote</span>`;
             } else {
                 placeName.innerHTML = `${safePlaceName} <span class="user-vote-indicator">👤 Your Choice</span>`;
             }
+        } else if (appState.previousVote === placeId && appState.justChangedVote) {
+            // This was the user's previous vote
+            placeName.innerHTML = `${safePlaceName} <span class="user-vote-indicator previous">👤 Previous Choice</span>`;
         }
         
         // Create and set up the vote count element
