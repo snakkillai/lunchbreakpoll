@@ -584,3 +584,110 @@ body {
         border-color: #000;
     }
 }
+
+/* Delete button styling */
+.delete-btn {
+    background: linear-gradient(135deg, #e53e3e, #c53030);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 18px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 60px;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.delete-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(229, 62, 62, 0.4);
+    background: linear-gradient(135deg, #c53030, #9b2c2c);
+}
+
+.delete-btn:active {
+    transform: translateY(0);
+}
+
+.delete-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Delete button with icon */
+.delete-btn-icon {
+    background: linear-gradient(135deg, #e53e3e, #c53030);
+    color: white;
+    border: none;
+    padding: 8px;
+    border-radius: 50%;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.delete-btn-icon:hover {
+    transform: translateY(-2px) scale(1.1);
+    box-shadow: 0 6px 18px rgba(229, 62, 62, 0.4);
+    background: linear-gradient(135deg, #c53030, #9b2c2c);
+}
+
+/* Small delete button variant */
+.delete-btn-small {
+    background: linear-gradient(135deg, #e53e3e, #c53030);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 50px;
+}
+
+.delete-btn-small:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(229, 62, 62, 0.3);
+}
+
+/* Danger confirmation state */
+.delete-btn.confirming {
+    background: linear-gradient(135deg, #ff6b6b, #e53e3e);
+    animation: pulse-danger 1s ease-in-out infinite;
+}
+
+@keyframes pulse-danger {
+    0%, 100% {
+        box-shadow: 0 4px 12px rgba(229, 62, 62, 0.3);
+    }
+    50% {
+        box-shadow: 0 6px 18px rgba(229, 62, 62, 0.6);
+    }
+}
+
+/* Mobile responsive */
+@media (max-width: 600px) {
+    .delete-btn {
+        padding: 10px 16px;
+        font-size: 0.9rem;
+        min-width: 70px;
+    }
+    
+    .delete-btn-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 1rem;
+    }
+}
