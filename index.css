@@ -677,7 +677,7 @@ body {
     }
 }
 
-/* Mobile responsive */
+/* Mobile responsive   */
 @media (max-width: 600px) {
     .delete-btn {
         padding: 10px 16px;
