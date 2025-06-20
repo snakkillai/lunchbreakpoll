@@ -589,7 +589,7 @@ body {
 .delete-poll-btn {
     background: linear-gradient(135deg, #e53e3e, #c53030);
     color: white;
-    border-top: 5px;
+    border: 5px;
     padding: 8px 16px;
     border-radius: 18px;
     font-size: 0.85rem;
