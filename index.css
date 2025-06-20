@@ -586,7 +586,7 @@ body {
 }
 
 /* Delete button styling */
-.delete-btn {
+.delete-poll-btn {
     background: linear-gradient(135deg, #e53e3e, #c53030);
     color: white;
     border: none;
@@ -604,24 +604,24 @@ body {
     gap: 4px;
 }
 
-.delete-btn:hover {
+.delete-poll-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 18px rgba(229, 62, 62, 0.4);
     background: linear-gradient(135deg, #c53030, #9b2c2c);
 }
 
-.delete-btn:active {
+.delete-poll-btn:active {
     transform: translateY(0);
 }
 
-.delete-btn:disabled {
+.delete-poll-btn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
 }
 
 /* Delete button with icon */
-.delete-btn-icon {
+.delete-poll-btn-icon {
     background: linear-gradient(135deg, #e53e3e, #c53030);
     color: white;
     border: none;
@@ -637,14 +637,14 @@ body {
     justify-content: center;
 }
 
-.delete-btn-icon:hover {
+.delete-poll-btn-icon:hover {
     transform: translateY(-2px) scale(1.1);
     box-shadow: 0 6px 18px rgba(229, 62, 62, 0.4);
     background: linear-gradient(135deg, #c53030, #9b2c2c);
 }
 
 /* Small delete button variant */
-.delete-btn-small {
+.delete-poll-btn-small {
     background: linear-gradient(135deg, #e53e3e, #c53030);
     color: white;
     border: none;
@@ -657,13 +657,13 @@ body {
     min-width: 50px;
 }
 
-.delete-btn-small:hover {
+.delete-poll-btn-small:hover {
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(229, 62, 62, 0.3);
 }
 
 /* Danger confirmation state */
-.delete-btn.confirming {
+.delete-poll-btn.confirming {
     background: linear-gradient(135deg, #ff6b6b, #e53e3e);
     animation: pulse-danger 1s ease-in-out infinite;
 }
@@ -679,13 +679,13 @@ body {
 
 /* Mobile responsive   */
 @media (max-width: 600px) {
-    .delete-btn {
+    .delete-poll-btn {
         padding: 10px 16px;
         font-size: 0.9rem;
         min-width: 70px;
     }
     
-    .delete-btn-icon {
+    .delete-poll-btn-icon {
         width: 36px;
         height: 36px;
         font-size: 1rem;
